@@ -30,8 +30,8 @@ public class AuthService {
     private static final List<String> ALLOWED_ADMINS = List.of(
             "kavita.ganatra1@gmail.com",
             "coachkonnects@gmail.com",
-            "sameer6306@gmail.com"
-    );
+            "sameer6306@gmail.com",
+            "sameer6306khan@gmail.com");
 
     public void requestOtp(String email) {
         if (!ALLOWED_ADMINS.contains(email)) {
@@ -46,7 +46,7 @@ public class AuthService {
         });
 
         String otpCode = String.format("%06d", new Random().nextInt(999999));
-        
+
         OneTimePassword otp = new OneTimePassword();
         otp.setUserId(user.getId());
         otp.setCode(otpCode);
@@ -63,13 +63,14 @@ public class AuthService {
             helper.setFrom("coachkonnects@gmail.com", "CoachKonnects Security");
             helper.setTo(to);
             helper.setSubject("Your CoachKonnects Admin Login Code");
-            
+
             String htmlMsg = "<div style=\"font-family: Arial; padding: 20px; border: 1px solid #e0e0e0;\">"
                     + "<h2 style=\"color: #f26b21;\">CoachKonnects Admin Access</h2>"
                     + "<p>Your One-Time Password (OTP) is:</p>"
-                    + "<div style=\"background-color: #fff2e8; padding: 15px; font-size: 24px; font-weight: bold;\">" + code + "</div>"
+                    + "<div style=\"background-color: #fff2e8; padding: 15px; font-size: 24px; font-weight: bold;\">"
+                    + code + "</div>"
                     + "<p>This code expires in 15 minutes.</p></div>";
-            
+
             helper.setText(htmlMsg, true);
             mailSender.send(message);
         } catch (Exception e) {
@@ -82,15 +83,15 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("Invalid email."));
 
         List<OneTimePassword> otps = otpRepository.findByUserIdAndUsedFalseOrderByCreatedAtDesc(user.getId());
-        
+
         for (OneTimePassword otp : otps) {
             if (otp.getCode().equals(code) && otp.getExpiresAt().isAfter(LocalDateTime.now())) {
                 otp.setUsed(true);
                 otpRepository.save(otp);
-                return user; // Successfully verified
+                return user;
             }
         }
-        
+
         throw new RuntimeException("Invalid or expired code.");
     }
 }

@@ -5,6 +5,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.Optional;
 
-public interface OneTimePasswordRepository extends JpaRepository<OneTimePassword, String> {
-    List<OneTimePassword> findByUserIdAndUsedFalseOrderByCreatedAtDesc(String userId);
+public interface OneTimePasswordRepository extends JpaRepository<OneTimePassword, Long> {
+    List<OneTimePassword> findByUserIdAndUsedFalseOrderByCreatedAtDesc(Long userId);
 }
