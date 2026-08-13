@@ -27,12 +27,27 @@ public class CoachProfile {
     @Column(length = 2000)
     private String description;
 
+    private String classMode;
+    private String pricing;
+    private String targetAudience;
+
+    private String availableDays;
+    private String timeSlots;
+
+    private String profileImageUrl;
+    private String groupImageUrl;
+    private String introVideoUrl;
+    private String socialLinks;
+
     @Column(unique = true)
     private String slug;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ProfileStatus status = ProfileStatus.PENDING_APPROVAL;
+
+    @Column(columnDefinition = "boolean default true")
+    private boolean isActive = true;
 
     public Long getId() {
         return id;
@@ -144,5 +159,85 @@ public class CoachProfile {
 
     public void setStatus(ProfileStatus status) {
         this.status = status;
+    }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean active) {
+        isActive = active;
+    }
+
+    public String getClassMode() {
+        return classMode;
+    }
+
+    public void setClassMode(String classMode) {
+        this.classMode = classMode;
+    }
+
+    public String getPricing() {
+        return pricing;
+    }
+
+    public void setPricing(String pricing) {
+        this.pricing = pricing;
+    }
+
+    public String getTargetAudience() {
+        return targetAudience;
+    }
+
+    public void setTargetAudience(String targetAudience) {
+        this.targetAudience = targetAudience;
+    }
+
+    public String getAvailableDays() {
+        return availableDays;
+    }
+
+    public void setAvailableDays(String availableDays) {
+        this.availableDays = availableDays;
+    }
+
+    public String getTimeSlots() {
+        return timeSlots;
+    }
+
+    public void setTimeSlots(String timeSlots) {
+        this.timeSlots = timeSlots;
+    }
+
+    public String getProfileImageUrl() {
+        return profileImageUrl;
+    }
+
+    public void setProfileImageUrl(String profileImageUrl) {
+        this.profileImageUrl = profileImageUrl;
+    }
+
+    public String getGroupImageUrl() {
+        return groupImageUrl;
+    }
+
+    public void setGroupImageUrl(String groupImageUrl) {
+        this.groupImageUrl = groupImageUrl;
+    }
+
+    public String getIntroVideoUrl() {
+        return introVideoUrl;
+    }
+
+    public void setIntroVideoUrl(String introVideoUrl) {
+        this.introVideoUrl = introVideoUrl;
+    }
+
+    public String getSocialLinks() {
+        return socialLinks;
+    }
+
+    public void setSocialLinks(String socialLinks) {
+        this.socialLinks = socialLinks;
     }
 }

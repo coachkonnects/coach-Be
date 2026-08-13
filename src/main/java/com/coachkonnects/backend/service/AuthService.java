@@ -27,23 +27,17 @@ public class AuthService {
     @Autowired
     private JavaMailSender mailSender;
 
-    private static final List<String> ALLOWED_ADMINS = List.of(
-            "kavita.ganatra1@gmail.com",
-            "coachkonnects@gmail.com",
-            "sameer6306@gmail.com",
-            "sameer6306khan@gmail.com");
-
     public void requestOtp(String email) {
-        if (!ALLOWED_ADMINS.contains(email)) {
-            throw new RuntimeException("Unauthorized: This email does not have Admin privileges.");
+        User user = userRepository.findByEmail(email).orElse(null);
+        boolean isFirstUser = userRepository.count() == 0;
+        
+        if (user == null) {
+            user = new User();
+            user.setEmail(email);
+            // The very first person to register becomes Admin, everyone else is a Student by default
+            user.setRole(isFirstUser ? "ADMIN" : "STUDENT");
+            user = userRepository.save(user);
         }
-
-        User user = userRepository.findByEmail(email).orElseGet(() -> {
-            User newUser = new User();
-            newUser.setEmail(email);
-            newUser.setRole("ADMIN");
-            return userRepository.save(newUser);
-        });
 
         String otpCode = String.format("%06d", new Random().nextInt(999999));
 

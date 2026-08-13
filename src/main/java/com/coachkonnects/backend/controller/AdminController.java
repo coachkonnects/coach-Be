@@ -54,7 +54,6 @@ public class AdminController {
         }
     }
 
-    // Approve a coach profile
     @PostMapping("/coaches/{id}/approve")
     public ResponseEntity<?> approveCoach(@PathVariable Long id) {
         try {
@@ -65,7 +64,26 @@ public class AdminController {
         }
     }
 
-    // Flag a student profile
+    @DeleteMapping("/coaches/{id}")
+    public ResponseEntity<?> deleteCoach(@PathVariable Long id) {
+        try {
+            adminService.deleteCoachProfile(id);
+            return ResponseEntity.ok("Coach profile and account deleted successfully.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/coaches/{id}/toggle-active")
+    public ResponseEntity<?> toggleActiveCoach(@PathVariable Long id) {
+        try {
+            adminService.toggleActiveCoachProfile(id);
+            return ResponseEntity.ok("Coach active status toggled.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @PostMapping("/students/{id}/flag")
     public ResponseEntity<?> flagStudent(@PathVariable Long id, @RequestBody FlagRequest req) {
         try {
@@ -76,7 +94,6 @@ public class AdminController {
         }
     }
 
-    // Approve a student profile
     @PostMapping("/students/{id}/approve")
     public ResponseEntity<?> approveStudent(@PathVariable Long id) {
         try {

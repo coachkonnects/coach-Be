@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.List;
 
 @Service
 public class AdminService {
@@ -18,6 +19,12 @@ public class AdminService {
 
     @Autowired
     private StudentProfileRepository studentRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private EnquiryRepository enquiryRepository;
 
     private static final int STUDENT_MAX_STRIKES = 3;
     private static final int COACH_MAX_STRIKES = 3;
@@ -85,5 +92,25 @@ public class AdminService {
                 .orElseThrow(() -> new RuntimeException("Student not found"));
         student.setStatus(ProfileStatus.APPROVED);
         studentRepository.save(student);
+    }
+
+    public void deleteCoachProfile(Long coachId) {
+        CoachProfile coach = coachRepository.findById(coachId)
+                .orElseThrow(() -> new RuntimeException("Coach not found"));
+
+        User user = coach.getUser();
+
+        List<AdminFlag> flags = flagRepository.findByUserAndIsResolvedFalse(user);
+        flagRepository.deleteAll(flags);
+
+        coachRepository.delete(coach);
+        userRepository.delete(user);
+    }
+
+    public void toggleActiveCoachProfile(Long coachId) {
+        CoachProfile coach = coachRepository.findById(coachId)
+                .orElseThrow(() -> new RuntimeException("Coach not found"));
+        coach.setActive(!coach.isActive());
+        coachRepository.save(coach);
     }
 }

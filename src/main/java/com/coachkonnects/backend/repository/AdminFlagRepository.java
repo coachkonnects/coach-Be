@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface AdminFlagRepository extends JpaRepository<AdminFlag, Long> {
     Optional<AdminFlag> findByUserAndFlaggedFieldAndIsResolvedFalse(User user, String flaggedField);
+    java.util.List<AdminFlag> findByUserAndIsResolvedFalse(User user);
 }
