@@ -41,10 +41,13 @@ public class ProfileController {
     @Autowired
     private AdminFlagRepository adminFlagRepository;
 
+    @Autowired
+    private com.coachkonnects.backend.service.ModerationService moderationService;
+
     private static final List<String> SPAM_WORDS = Arrays.asList(
-        "math", "science", "physics", "chemistry", // Educational Subjects not allowed
-        "scam", "hack", "crypto", "bitcoin", "investment", // Spam
-        "idiot", "stupid", "dumb" // Negative Words
+            "math", "science", "physics", "chemistry", // Educational Subjects not allowed
+            "scam", "hack", "crypto", "bitcoin", "investment", // Spam
+            "idiot", "stupid", "dumb" // Negative Words
     );
 
     public static class ProfileRequest {
@@ -74,6 +77,17 @@ public class ProfileController {
     @GetMapping("/coach")
     public ResponseEntity<?> getAllCoaches() {
         return ResponseEntity.ok(coachProfileRepository.findAll());
+    }
+
+    @GetMapping("/student")
+    public ResponseEntity<?> getAllStudents() {
+        return ResponseEntity.ok(studentProfileRepository.findAll());
+    }
+
+    @DeleteMapping("/student/{id}")
+    public ResponseEntity<?> deleteStudentProfile(@PathVariable Long id) {
+        studentProfileRepository.deleteById(id);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/coach/me")
@@ -107,35 +121,55 @@ public class ProfileController {
                     .orElseThrow(() -> new RuntimeException("Coach profile not found."));
 
             // Update fields
-            if (req.fullName != null) profile.setFullName(req.fullName);
-            if (req.dob != null) profile.setDateOfBirth(req.dob);
-            if (req.district != null) profile.setDistrict(req.district);
-            if (req.state != null) profile.setState(req.state);
-            if (req.pincode != null) profile.setPincode(req.pincode);
-            if (req.area != null) profile.setArea(req.area);
-            if (req.location != null) profile.setLocation(req.location);
-            if (req.category != null) profile.setCategory(req.category);
-            if (req.expertise != null) profile.setExpertise(req.expertise);
-            if (req.description != null) profile.setDescription(req.description);
-            if (req.classMode != null) profile.setClassMode(req.classMode);
-            if (req.pricing != null) profile.setPricing(req.pricing);
-            if (req.targetAudience != null) profile.setTargetAudience(req.targetAudience);
-            if (req.availableDays != null) profile.setAvailableDays(req.availableDays);
-            if (req.timeSlots != null) profile.setTimeSlots(req.timeSlots);
-            if (req.profileImageUrl != null) profile.setProfileImageUrl(req.profileImageUrl);
-            if (req.groupImageUrl != null) profile.setGroupImageUrl(req.groupImageUrl);
-            if (req.introVideoUrl != null) profile.setIntroVideoUrl(req.introVideoUrl);
-            if (req.socialLinks != null) profile.setSocialLinks(req.socialLinks);
+            if (req.fullName != null)
+                profile.setFullName(req.fullName);
+            if (req.dob != null)
+                profile.setDateOfBirth(req.dob);
+            if (req.district != null)
+                profile.setDistrict(req.district);
+            if (req.state != null)
+                profile.setState(req.state);
+            if (req.pincode != null)
+                profile.setPincode(req.pincode);
+            if (req.area != null)
+                profile.setArea(req.area);
+            if (req.location != null)
+                profile.setLocation(req.location);
+            if (req.category != null)
+                profile.setCategory(req.category);
+            if (req.expertise != null)
+                profile.setExpertise(req.expertise);
+            if (req.description != null) {
+                moderationService.validateContent(req.description);
+                profile.setDescription(req.description);
+            }
+            if (req.classMode != null)
+                profile.setClassMode(req.classMode);
+            if (req.pricing != null)
+                profile.setPricing(req.pricing);
+            if (req.targetAudience != null)
+                profile.setTargetAudience(req.targetAudience);
+            if (req.availableDays != null)
+                profile.setAvailableDays(req.availableDays);
+            if (req.timeSlots != null)
+                profile.setTimeSlots(req.timeSlots);
+            if (req.profileImageUrl != null)
+                profile.setProfileImageUrl(req.profileImageUrl);
+            if (req.groupImageUrl != null)
+                profile.setGroupImageUrl(req.groupImageUrl);
+            if (req.introVideoUrl != null)
+                profile.setIntroVideoUrl(req.introVideoUrl);
+            if (req.socialLinks != null)
+                profile.setSocialLinks(req.socialLinks);
 
-            // Set back to pending if flagged
-            if (profile.getStatus() == ProfileStatus.REQUEST_CHANGE) {
-                profile.setStatus(ProfileStatus.PENDING_APPROVAL);
-                // Mark flags as resolved
-                List<AdminFlag> activeFlags = adminFlagRepository.findByUserAndIsResolvedFalse(user);
-                for (AdminFlag flag : activeFlags) {
-                    flag.setResolved(true);
-                    adminFlagRepository.save(flag);
-                }
+            // Set back to pending approval to require admin review of the changes
+            profile.setStatus(ProfileStatus.PENDING_APPROVAL);
+
+            // Mark flags as resolved if there were any
+            List<AdminFlag> activeFlags = adminFlagRepository.findByUserAndIsResolvedFalse(user);
+            for (AdminFlag flag : activeFlags) {
+                flag.setResolved(true);
+                adminFlagRepository.save(flag);
             }
 
             CoachProfile saved = coachProfileRepository.save(profile);
@@ -156,7 +190,7 @@ public class ProfileController {
 
             profile.setActive(!profile.isActive());
             coachProfileRepository.save(profile);
-            
+
             return ResponseEntity.ok(Map.of("isActive", profile.isActive()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
@@ -173,8 +207,10 @@ public class ProfileController {
             User user = userRepository.findByEmail(req.email)
                     .orElseThrow(() -> new RuntimeException("User not found. Please verify email first."));
 
-            if (coachProfileRepository.findByUser(user).isPresent() || studentProfileRepository.findByUser(user).isPresent()) {
-                throw new RuntimeException("This email is already registered with a profile. Please use a different email.");
+            if (coachProfileRepository.findByUser(user).isPresent()
+                    || studentProfileRepository.findByUser(user).isPresent()) {
+                throw new RuntimeException(
+                        "This email is already registered with a profile. Please use a different email.");
             }
 
             CoachProfile profile = new CoachProfile();
@@ -188,7 +224,10 @@ public class ProfileController {
             profile.setLocation(req.location);
             profile.setCategory(req.category);
             profile.setExpertise(req.expertise);
-            profile.setDescription(req.description);
+            if (req.description != null) {
+                moderationService.validateContent(req.description);
+                profile.setDescription(req.description);
+            }
             profile.setClassMode(req.classMode);
             profile.setPricing(req.pricing);
             profile.setTargetAudience(req.targetAudience);
@@ -219,8 +258,10 @@ public class ProfileController {
             User user = userRepository.findByEmail(req.email)
                     .orElseThrow(() -> new RuntimeException("User not found. Please verify email first."));
 
-            if (coachProfileRepository.findByUser(user).isPresent() || studentProfileRepository.findByUser(user).isPresent()) {
-                throw new RuntimeException("This email is already registered with a profile. Please use a different email.");
+            if (coachProfileRepository.findByUser(user).isPresent()
+                    || studentProfileRepository.findByUser(user).isPresent()) {
+                throw new RuntimeException(
+                        "This email is already registered with a profile. Please use a different email.");
             }
 
             StudentProfile profile = new StudentProfile();
@@ -241,19 +282,18 @@ public class ProfileController {
     }
 
     private void checkIpLimit(String ip) {
+        // Skip IP limit for local testing
+        if ("127.0.0.1".equals(ip) || "0:0:0:0:0:0:0:1".equals(ip)) {
+            return;
+        }
+
         IpTracking tracker = ipTrackingRepository.findById(ip).orElseGet(() -> {
             IpTracking newTracker = new IpTracking();
             newTracker.setIpAddress(ip);
             return newTracker;
         });
 
-        if (tracker.isBlocked()) {
-            throw new RuntimeException("IP_BLOCKED: This IP address has been blocked due to suspicious activity.");
-        }
-
         if (tracker.getRegistrationCount() >= 5) {
-            tracker.setBlocked(true);
-            ipTrackingRepository.save(tracker);
             throw new RuntimeException("IP_LIMIT_EXCEEDED: Maximum 5 registrations allowed per IP address.");
         }
 
@@ -263,11 +303,13 @@ public class ProfileController {
     }
 
     private void checkSpamPolicy(String content) {
-        if (content == null) return;
+        if (content == null)
+            return;
         String lowerContent = content.toLowerCase();
         for (String word : SPAM_WORDS) {
             if (lowerContent.contains(word)) {
-                throw new RuntimeException("SPAM_DETECTED: Registration blocked due to policy violation (Spam/Educational Subjects).");
+                throw new RuntimeException(
+                        "SPAM_DETECTED: Registration blocked due to policy violation (Spam/Educational Subjects).");
             }
         }
     }

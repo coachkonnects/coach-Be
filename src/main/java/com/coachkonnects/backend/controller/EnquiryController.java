@@ -64,4 +64,40 @@ public class EnquiryController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+    
+    @GetMapping("/coach")
+    public ResponseEntity<?> getCoachEnquiries(@RequestParam String email) {
+        try {
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found."));
+
+            CoachProfile coach = coachProfileRepository.findByUser(user)
+                    .orElseThrow(() -> new RuntimeException("Coach profile not found."));
+
+            return ResponseEntity.ok(enquiryRepository.findByCoach(coach));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}/status")
+    public ResponseEntity<?> updateEnquiryStatus(@PathVariable Long id, @RequestBody Map<String, String> payload) {
+        try {
+            String statusStr = payload.get("status");
+            if (statusStr == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Status is required."));
+            }
+
+            Enquiry enquiry = enquiryRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Enquiry not found."));
+
+            EnquiryStatus status = EnquiryStatus.valueOf(statusStr);
+            enquiry.setStatus(status);
+            enquiryRepository.save(enquiry);
+
+            return ResponseEntity.ok(Map.of("message", "Status updated successfully!", "enquiry", enquiry));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

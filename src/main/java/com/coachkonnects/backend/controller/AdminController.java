@@ -25,6 +25,9 @@ public class AdminController {
     @Autowired
     private AdminService adminService;
 
+    @Autowired
+    private CoachProfileRepository coachRepository;
+
     // Get all coaches (Pending, Approved, Rejected) for the dashboard
     @GetMapping("/coaches")
     public ResponseEntity<?> getAllCoaches() {
@@ -59,6 +62,30 @@ public class AdminController {
         try {
             adminService.approveCoachProfile(id);
             return ResponseEntity.ok("Profile approved successfully and is now LIVE.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+
+    @PostMapping("/coaches/{id}/feature")
+    public ResponseEntity<?> toggleFeatureCoach(@PathVariable Long id) {
+        try {
+            CoachProfile coach = coachRepository.findById(id).orElseThrow(() -> new RuntimeException("Coach not found"));
+            coach.setIsFeatured(coach.getIsFeatured() == null || !coach.getIsFeatured());
+            coachRepository.save(coach);
+            return ResponseEntity.ok(coach.getIsFeatured() ? "Coach featured successfully!" : "Coach removed from featured.");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+
+    @PostMapping("/coaches/{id}/reject")
+    public ResponseEntity<?> rejectCoachProfile(@PathVariable Long id) {
+        try {
+            adminService.rejectCoachProfile(id);
+            return ResponseEntity.ok("Coach profile rejected.");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

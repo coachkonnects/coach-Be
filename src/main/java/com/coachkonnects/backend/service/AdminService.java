@@ -4,6 +4,10 @@ import com.coachkonnects.backend.model.*;
 import com.coachkonnects.backend.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.MessagingException;
 
 import java.util.Optional;
 import java.util.List;
@@ -25,6 +29,9 @@ public class AdminService {
 
     @Autowired
     private EnquiryRepository enquiryRepository;
+
+    @Autowired
+    private JavaMailSender mailSender;
 
     private static final int STUDENT_MAX_STRIKES = 3;
     private static final int COACH_MAX_STRIKES = 3;
@@ -85,7 +92,33 @@ public class AdminService {
                 .orElseThrow(() -> new RuntimeException("Coach not found"));
         coach.setStatus(ProfileStatus.APPROVED);
         coachRepository.save(coach);
+        
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom("coachkonnects@gmail.com", "CoachKonnects Security");
+            helper.setTo(coach.getUser().getEmail());
+            helper.setSubject("Your Coach Profile is Approved!");
+            
+            String htmlContent = "<h1>Congratulations!</h1>" +
+                "<p>Your Coach Profile has been approved and is now LIVE on CoachKonnects.</p>" +
+                "<p>Students can now view your profile, register for your classes, and send you enquiries.</p>" +
+                "<p>Keep your availability and classes updated for the best experience.</p>";
+            
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+        } catch (Exception e) {
+            System.err.println("Failed to send approval email: " + e.getMessage());
+        }
     }
+
+    public void rejectCoachProfile(Long coachId) {
+        CoachProfile coach = coachRepository.findById(coachId)
+                .orElseThrow(() -> new RuntimeException("Coach not found"));
+        coach.setStatus(ProfileStatus.REJECTED);
+        coachRepository.save(coach);
+    }
+
 
     public void approveStudentProfile(Long studentId) {
         StudentProfile student = studentRepository.findById(studentId)

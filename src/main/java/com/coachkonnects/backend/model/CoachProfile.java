@@ -36,6 +36,8 @@ public class CoachProfile {
 
     private String profileImageUrl;
     private String groupImageUrl;
+    @jakarta.persistence.Column(name = "is_featured")
+    private Boolean isFeatured = false;
     private String introVideoUrl;
     private String socialLinks;
 
@@ -216,6 +218,10 @@ public class CoachProfile {
     public void setProfileImageUrl(String profileImageUrl) {
         this.profileImageUrl = profileImageUrl;
     }
+
+
+    public Boolean getIsFeatured() { return isFeatured; }
+    public void setIsFeatured(Boolean isFeatured) { this.isFeatured = isFeatured; }
 
     public String getGroupImageUrl() {
         return groupImageUrl;

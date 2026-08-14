@@ -3,6 +3,7 @@ package com.coachkonnects.backend.controller;
 import com.coachkonnects.backend.model.CoachProfile;
 import com.coachkonnects.backend.model.ProfileStatus;
 import com.coachkonnects.backend.repository.CoachProfileRepository;
+import com.coachkonnects.backend.repository.CoachClassRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
