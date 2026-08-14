@@ -3,14 +3,20 @@ package com.coachkonnects.backend.controller;
 import com.coachkonnects.backend.model.CoachProfile;
 import com.coachkonnects.backend.model.StudentProfile;
 import com.coachkonnects.backend.model.ProfileStatus;
+import com.coachkonnects.backend.model.Enquiry;
+import com.coachkonnects.backend.model.EnquiryStatus;
 import com.coachkonnects.backend.repository.CoachProfileRepository;
 import com.coachkonnects.backend.repository.StudentProfileRepository;
+import com.coachkonnects.backend.repository.EnquiryRepository;
+import com.coachkonnects.backend.repository.CoachClassRepository;
+import com.coachkonnects.backend.model.CoachClass;
 import com.coachkonnects.backend.service.AdminService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -28,7 +34,60 @@ public class AdminController {
     @Autowired
     private CoachProfileRepository coachRepository;
 
-    // Get all coaches (Pending, Approved, Rejected) for the dashboard
+    @Autowired
+    private EnquiryRepository enquiryRepository;
+
+    @Autowired
+    private CoachClassRepository classRepository;
+
+    @GetMapping("/classes")
+    public ResponseEntity<?> getAllClasses() {
+        return ResponseEntity.ok(classRepository.findAll().stream().map(c -> {
+            Map<String, Object> map = new java.util.HashMap<>();
+            map.put("id", c.getId());
+            map.put("title", c.getTitle());
+            map.put("type", c.getType());
+            map.put("schedule", c.getSchedule());
+            map.put("price", c.getPrice());
+            map.put("capacity", c.getCapacity());
+            map.put("createdAt", c.getCreatedAt());
+            map.put("coachEmail", c.getUser() != null ? c.getUser().getEmail() : "Unknown");
+            return map;
+        }).toList());
+    }
+
+    @GetMapping("/enquiries")
+    public ResponseEntity<?> getAllEnquiries() {
+        return ResponseEntity.ok(enquiryRepository.findAll());
+    }
+
+    @PutMapping("/enquiries/{id}/approve")
+    public ResponseEntity<?> approveEnquiry(@PathVariable Long id) {
+        try {
+            Enquiry enquiry = enquiryRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Enquiry not found"));
+            enquiry.setStatus(EnquiryStatus.PENDING_COACH_APPROVAL);
+            enquiryRepository.save(enquiry);
+            return ResponseEntity.ok(Map.of("message", "Lead approved and sent to coach."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/enquiries/{id}/reject")
+    public ResponseEntity<?> rejectEnquiry(@PathVariable Long id) {
+        try {
+            Enquiry enquiry = enquiryRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Enquiry not found"));
+            enquiry.setStatus(EnquiryStatus.REJECTED);
+            enquiryRepository.save(enquiry);
+            return ResponseEntity.ok(Map.of("message", "Lead rejected."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // ── Get all coaches ────────────────────────────────────────────────
     @GetMapping("/coaches")
     public ResponseEntity<?> getAllCoaches() {
         List<CoachProfile> coaches = coachProfileRepository.findAll();
@@ -67,19 +126,19 @@ public class AdminController {
         }
     }
 
-
     @PostMapping("/coaches/{id}/feature")
     public ResponseEntity<?> toggleFeatureCoach(@PathVariable Long id) {
         try {
-            CoachProfile coach = coachRepository.findById(id).orElseThrow(() -> new RuntimeException("Coach not found"));
+            CoachProfile coach = coachRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Coach not found"));
             coach.setIsFeatured(coach.getIsFeatured() == null || !coach.getIsFeatured());
             coachRepository.save(coach);
-            return ResponseEntity.ok(coach.getIsFeatured() ? "Coach featured successfully!" : "Coach removed from featured.");
+            return ResponseEntity
+                    .ok(coach.getIsFeatured() ? "Coach featured successfully!" : "Coach removed from featured.");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-
 
     @PostMapping("/coaches/{id}/reject")
     public ResponseEntity<?> rejectCoachProfile(@PathVariable Long id) {

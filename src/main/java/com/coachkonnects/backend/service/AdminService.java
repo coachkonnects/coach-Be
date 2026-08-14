@@ -90,21 +90,75 @@ public class AdminService {
     public void approveCoachProfile(Long coachId) {
         CoachProfile coach = coachRepository.findById(coachId)
                 .orElseThrow(() -> new RuntimeException("Coach not found"));
+
+        // If there are pending changes, apply them now
+        if (coach.getPendingChanges() != null && !coach.getPendingChanges().isEmpty()) {
+            try {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                com.coachkonnects.backend.controller.ProfileController.ProfileRequest req = mapper.readValue(
+                        coach.getPendingChanges(),
+                        com.coachkonnects.backend.controller.ProfileController.ProfileRequest.class);
+
+                if (req.fullName != null)
+                    coach.setFullName(req.fullName);
+                if (req.dob != null)
+                    coach.setDateOfBirth(req.dob);
+                if (req.district != null)
+                    coach.setDistrict(req.district);
+                if (req.state != null)
+                    coach.setState(req.state);
+                if (req.pincode != null)
+                    coach.setPincode(req.pincode);
+                if (req.area != null)
+                    coach.setArea(req.area);
+                if (req.location != null)
+                    coach.setLocation(req.location);
+                if (req.category != null)
+                    coach.setCategory(req.category);
+                if (req.expertise != null)
+                    coach.setExpertise(req.expertise);
+                if (req.description != null)
+                    coach.setDescription(req.description);
+                if (req.classMode != null)
+                    coach.setClassMode(req.classMode);
+                if (req.pricing != null)
+                    coach.setPricing(req.pricing);
+                if (req.targetAudience != null)
+                    coach.setTargetAudience(req.targetAudience);
+                if (req.availableDays != null)
+                    coach.setAvailableDays(req.availableDays);
+                if (req.timeSlots != null)
+                    coach.setTimeSlots(req.timeSlots);
+                if (req.profileImageUrl != null)
+                    coach.setProfileImageUrl(req.profileImageUrl);
+                if (req.groupImageUrl != null)
+                    coach.setGroupImageUrl(req.groupImageUrl);
+                if (req.introVideoUrl != null)
+                    coach.setIntroVideoUrl(req.introVideoUrl);
+                if (req.socialLinks != null)
+                    coach.setSocialLinks(req.socialLinks);
+
+                coach.setPendingChanges(null);
+            } catch (Exception e) {
+                System.err.println("Failed to apply pending changes: " + e.getMessage());
+            }
+        }
+
         coach.setStatus(ProfileStatus.APPROVED);
         coachRepository.save(coach);
-        
+
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             helper.setFrom("coachkonnects@gmail.com", "CoachKonnects Security");
             helper.setTo(coach.getUser().getEmail());
             helper.setSubject("Your Coach Profile is Approved!");
-            
+
             String htmlContent = "<h1>Congratulations!</h1>" +
-                "<p>Your Coach Profile has been approved and is now LIVE on CoachKonnects.</p>" +
-                "<p>Students can now view your profile, register for your classes, and send you enquiries.</p>" +
-                "<p>Keep your availability and classes updated for the best experience.</p>";
-            
+                    "<p>Your Coach Profile has been approved and is now LIVE on CoachKonnects.</p>" +
+                    "<p>Students can now view your profile, register for your classes, and send you enquiries.</p>" +
+                    "<p>Keep your availability and classes updated for the best experience.</p>";
+
             helper.setText(htmlContent, true);
             mailSender.send(message);
         } catch (Exception e) {
@@ -115,10 +169,37 @@ public class AdminService {
     public void rejectCoachProfile(Long coachId) {
         CoachProfile coach = coachRepository.findById(coachId)
                 .orElseThrow(() -> new RuntimeException("Coach not found"));
-        coach.setStatus(ProfileStatus.REJECTED);
-        coachRepository.save(coach);
-    }
 
+        boolean wasEdit = coach.getPendingChanges() != null && !coach.getPendingChanges().isEmpty();
+
+        coach.setPendingChanges(null);
+
+        if (wasEdit) {
+            coach.setStatus(ProfileStatus.APPROVED);
+        } else {
+            coach.setStatus(ProfileStatus.REJECTED);
+        }
+
+        coachRepository.save(coach);
+
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom("coachkonnects@gmail.com", "CoachKonnects Security");
+            helper.setTo(coach.getUser().getEmail());
+            helper.setSubject("Action Required: Coach Profile Update Rejected");
+
+            String htmlContent = "<h1>Profile Update Rejected</h1>" +
+                    "<p>Hello " + (coach.getFullName() != null ? coach.getFullName() : "Coach") + ",</p>" +
+                    "<p>Your recent profile submission or update has been rejected by our moderation team.</p>" +
+                    "<p>Please review your profile details and ensure they meet our community guidelines before resubmitting.</p>";
+
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+        } catch (Exception e) {
+            System.err.println("Failed to send rejection email: " + e.getMessage());
+        }
+    }
 
     public void approveStudentProfile(Long studentId) {
         StudentProfile student = studentRepository.findById(studentId)

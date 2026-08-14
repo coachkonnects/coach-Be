@@ -1,0 +1,1 @@
+ALTER TABLE enquiries ALTER COLUMN student_id DROP NOT NULL;

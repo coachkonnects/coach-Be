@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/public")
@@ -16,6 +17,9 @@ public class PublicController {
 
     @Autowired
     private CoachProfileRepository coachProfileRepository;
+
+    @Autowired
+    private CoachClassRepository coachClassRepository;
 
     @GetMapping("/coaches")
     public ResponseEntity<?> getPublicCoaches() {
@@ -28,5 +32,19 @@ public class PublicController {
         return coachProfileRepository.findBySlugAndStatusAndIsActiveTrue(slug, ProfileStatus.APPROVED)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/coach/{slug}/classes")
+    public ResponseEntity<?> getPublicClassesByCoachSlug(@PathVariable String slug) {
+        Optional<CoachProfile> coachOpt = coachProfileRepository.findBySlugAndStatusAndIsActiveTrue(slug, ProfileStatus.APPROVED);
+        if (coachOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(coachClassRepository.findByUser(coachOpt.get().getUser()));
+    }
+
+    @GetMapping("/classes")
+    public ResponseEntity<?> getPublicClasses() {
+        return ResponseEntity.ok(coachClassRepository.findAll());
     }
 }

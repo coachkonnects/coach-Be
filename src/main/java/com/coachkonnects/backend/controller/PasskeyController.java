@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.*;
 
 @RestController
-@RequestMapping("/api/admin/passkeys")
+@RequestMapping("/api/passkeys")
 public class PasskeyController {
 
     @Autowired

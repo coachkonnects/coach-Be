@@ -41,6 +41,9 @@ public class CoachProfile {
     private String introVideoUrl;
     private String socialLinks;
 
+    @Column(columnDefinition = "TEXT")
+    private String pendingChanges;
+
     @Column(unique = true)
     private String slug;
 
@@ -245,5 +248,13 @@ public class CoachProfile {
 
     public void setSocialLinks(String socialLinks) {
         this.socialLinks = socialLinks;
+    }
+
+    public String getPendingChanges() {
+        return pendingChanges;
+    }
+
+    public void setPendingChanges(String pendingChanges) {
+        this.pendingChanges = pendingChanges;
     }
 }

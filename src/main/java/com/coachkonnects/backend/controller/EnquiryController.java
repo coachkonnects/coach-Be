@@ -3,15 +3,15 @@ package com.coachkonnects.backend.controller;
 import com.coachkonnects.backend.model.CoachProfile;
 import com.coachkonnects.backend.model.Enquiry;
 import com.coachkonnects.backend.model.EnquiryStatus;
-import com.coachkonnects.backend.model.StudentProfile;
 import com.coachkonnects.backend.model.User;
 import com.coachkonnects.backend.repository.CoachProfileRepository;
 import com.coachkonnects.backend.repository.EnquiryRepository;
-import com.coachkonnects.backend.repository.StudentProfileRepository;
 import com.coachkonnects.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.persistence.EntityManager;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
@@ -26,45 +26,51 @@ public class EnquiryController {
     private CoachProfileRepository coachProfileRepository;
 
     @Autowired
-    private StudentProfileRepository studentProfileRepository;
-
-    @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private EntityManager entityManager;
     @PostMapping("/send")
     public ResponseEntity<?> sendEnquiry(@RequestBody Map<String, String> payload) {
         try {
-            String studentEmail = payload.get("email");
-            String coachSlug = payload.get("coachSlug");
-            String message = payload.get("message");
+            String leadEmail   = payload.get("email");
+            String coachSlug   = payload.get("coachSlug");
+            String message     = payload.get("message");
+            String leadName    = payload.getOrDefault("name", "Visitor");
+            String rawPhone    = payload.get("phone");
+            String leadPhone   = (rawPhone != null && rawPhone.trim().isEmpty()) ? null : rawPhone;
+            String leadLocation = payload.get("location");
 
-            if (studentEmail == null || coachSlug == null || message == null || message.trim().isEmpty()) {
+            if (leadEmail == null || coachSlug == null || message == null || message.trim().isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Missing required fields."));
             }
 
-            User user = userRepository.findByEmail(studentEmail)
-                    .orElseThrow(() -> new RuntimeException("User not found."));
-
-            StudentProfile student = studentProfileRepository.findByUser(user)
-                    .orElseThrow(() -> new RuntimeException("Only registered students can send enquiries."));
-
-            CoachProfile coach = coachProfileRepository.findBySlugAndStatusAndIsActiveTrue(coachSlug, com.coachkonnects.backend.model.ProfileStatus.APPROVED)
+            // Find the target coach
+            CoachProfile coach = coachProfileRepository
+                    .findBySlugAndStatusAndIsActiveTrue(coachSlug, com.coachkonnects.backend.model.ProfileStatus.APPROVED)
                     .orElseThrow(() -> new RuntimeException("Coach not found or not approved."));
 
+            // Save the lead directly on the enquiry — no User/StudentProfile creation
             Enquiry enquiry = new Enquiry();
-            enquiry.setStudent(student);
+            enquiry.setLeadName(leadName);
+            enquiry.setLeadEmail(leadEmail);
+            enquiry.setLeadPhone(leadPhone);
+            enquiry.setLeadLocation(leadLocation);
             enquiry.setCoach(coach);
             enquiry.setMessage(message);
-            enquiry.setStatus(EnquiryStatus.PENDING_COACH_APPROVAL);
-            
+            boolean isExistingUser = userRepository.findByEmail(leadEmail).isPresent();
+            enquiry.setStatus(isExistingUser ? EnquiryStatus.PENDING_COACH_APPROVAL : EnquiryStatus.PENDING_ADMIN_APPROVAL);
+
             enquiryRepository.save(enquiry);
 
-            return ResponseEntity.ok(Map.of("message", "Enquiry sent successfully!"));
+            return ResponseEntity.ok(Map.of("message", "Enquiry sent successfully! Admin will review it shortly."));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+            e.printStackTrace();
+            String errorMsg = e.getMessage() != null ? e.getMessage() : e.toString();
+            return ResponseEntity.badRequest().body(Map.of("error", errorMsg));
         }
     }
-    
+
     @GetMapping("/coach")
     public ResponseEntity<?> getCoachEnquiries(@RequestParam String email) {
         try {
@@ -74,7 +80,14 @@ public class EnquiryController {
             CoachProfile coach = coachProfileRepository.findByUser(user)
                     .orElseThrow(() -> new RuntimeException("Coach profile not found."));
 
-            return ResponseEntity.ok(enquiryRepository.findByCoach(coach));
+            // Coaches should only see leads that have passed Admin Approval
+            // e.g., PENDING_COACH_APPROVAL, APPROVED, REJECTED (by coach)
+            var allEnquiries = enquiryRepository.findByCoach(coach);
+            var filteredEnquiries = allEnquiries.stream()
+                    .filter(e -> e.getStatus() != EnquiryStatus.PENDING_ADMIN_APPROVAL)
+                    .toList();
+
+            return ResponseEntity.ok(filteredEnquiries);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -95,7 +108,7 @@ public class EnquiryController {
             enquiry.setStatus(status);
             enquiryRepository.save(enquiry);
 
-            return ResponseEntity.ok(Map.of("message", "Status updated successfully!", "enquiry", enquiry));
+            return ResponseEntity.ok(Map.of("message", "Status updated successfully!"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }

@@ -24,6 +24,9 @@ public class CoachClass {
     
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
+    
+    @Column(name = "image_url")
+    private String imageUrl;
 
     public CoachClass() {}
     public Long getId() { return id; }
@@ -44,4 +47,7 @@ public class CoachClass {
     public void setCapacity(Integer capacity) { this.capacity = capacity; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 }
