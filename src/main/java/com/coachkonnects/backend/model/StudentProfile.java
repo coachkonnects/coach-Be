@@ -26,12 +26,24 @@ public class StudentProfile {
     @Column(length = 500)
     private String interests;
 
+
     private String preference;
+    
     private String heardFrom;
+
+    private Boolean parentalConsent;
+    
+    private String parentName;
+    
+    private String parentContact;
+
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ProfileStatus status = ProfileStatus.PENDING_APPROVAL;
+
+    @Column(length = 500)
+    private String rejectReason;
 
     public Long getId() {
         return id;
@@ -143,5 +155,13 @@ public class StudentProfile {
 
     public void setStatus(ProfileStatus status) {
         this.status = status;
+    }
+
+    public String getRejectReason() {
+        return rejectReason;
+    }
+
+    public void setRejectReason(String rejectReason) {
+        this.rejectReason = rejectReason;
     }
 }

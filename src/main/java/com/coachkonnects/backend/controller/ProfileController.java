@@ -60,6 +60,7 @@ public class ProfileController {
         public String fullName;
         public String mobile;
         public String dob;
+        public String gender;
         public String district;
         public String state;
         public String pincode;
@@ -77,6 +78,13 @@ public class ProfileController {
         public String groupImageUrl;
         public String introVideoUrl;
         public String socialLinks;
+        public String interests;
+        public String preference;
+        public String heardFrom;
+        public Boolean parentalConsent;
+        public String parentName;
+        public String parentContact;
+
     }
 
     @GetMapping("/coach")
@@ -178,6 +186,56 @@ public class ProfileController {
         }
     }
 
+    @GetMapping("/student/me")
+    public ResponseEntity<?> getMyStudentProfile(@RequestParam String email) {
+        try {
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found."));
+
+            StudentProfile profile = studentProfileRepository.findByUser(user)
+                    .orElseThrow(() -> new RuntimeException("Student profile not found."));
+
+            return ResponseEntity.ok(Map.of("profile", profile));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/student/me")
+    public ResponseEntity<?> updateMyStudentProfile(@RequestParam String email, @RequestBody ProfileRequest req) {
+        try {
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found."));
+
+            StudentProfile profile = studentProfileRepository.findByUser(user)
+                    .orElseThrow(() -> new RuntimeException("Student profile not found."));
+
+            if (req.fullName != null) profile.setFullName(req.fullName);
+            if (req.dob != null) profile.setDateOfBirth(req.dob);
+            if (req.gender != null) profile.setGender(req.gender);
+            if (req.district != null) profile.setDistrict(req.district);
+            if (req.state != null) profile.setState(req.state);
+            if (req.pincode != null) profile.setPincode(req.pincode);
+            if (req.area != null) profile.setArea(req.area);
+            if (req.location != null) profile.setLocation(req.location);
+            if (req.interests != null) profile.setInterests(req.interests);
+            if (req.preference != null) profile.setPreference(req.preference);
+            if (req.heardFrom != null) profile.setHeardFrom(req.heardFrom);
+            if (req.parentalConsent != null) profile.setParentalConsent(req.parentalConsent);
+            if (req.parentName != null) profile.setParentName(req.parentName);
+            if (req.parentContact != null) profile.setParentContact(req.parentContact);
+
+
+            profile.setStatus(ProfileStatus.PENDING_APPROVAL); // Require re-approval on edit
+            profile.setRejectReason(null);
+
+            StudentProfile saved = studentProfileRepository.save(profile);
+            return ResponseEntity.ok(saved);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @PostMapping("/coach")
     public ResponseEntity<?> createCoachProfile(@RequestBody ProfileRequest req, HttpServletRequest request) {
         try {
@@ -249,11 +307,19 @@ public class ProfileController {
             profile.setUser(user);
             profile.setFullName(req.fullName);
             profile.setDateOfBirth(req.dob);
+            profile.setGender(req.gender);
             profile.setDistrict(req.district);
             profile.setState(req.state);
             profile.setPincode(req.pincode);
             profile.setArea(req.area);
             profile.setLocation(req.location);
+            profile.setInterests(req.interests);
+            profile.setPreference(req.preference);
+            profile.setHeardFrom(req.heardFrom);
+            profile.setParentalConsent(req.parentalConsent);
+            profile.setParentName(req.parentName);
+            profile.setParentContact(req.parentContact);
+
 
             StudentProfile saved = studentProfileRepository.save(profile);
             return ResponseEntity.ok(saved);

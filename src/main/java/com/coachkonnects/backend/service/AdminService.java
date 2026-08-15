@@ -205,7 +205,64 @@ public class AdminService {
         StudentProfile student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new RuntimeException("Student not found"));
         student.setStatus(ProfileStatus.APPROVED);
+        student.setRejectReason(null);
         studentRepository.save(student);
+
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom("coachkonnects@gmail.com", "CoachKonnects Registration");
+            helper.setTo(student.getUser().getEmail());
+            helper.setSubject("Your Student Profile is Approved!");
+
+            String htmlContent = "<h1>Welcome to CoachKonnects!</h1>" +
+                    "<p>Your Student Profile has been approved by our team.</p>" +
+                    "<p>You can now browse coach profiles and send enquiries to start learning.</p>";
+
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+        } catch (Exception e) {
+            System.err.println("Failed to send student approval email: " + e.getMessage());
+        }
+    }
+
+    public void rejectStudentProfile(Long studentId, String reason) {
+        StudentProfile student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+        student.setStatus(ProfileStatus.REJECTED);
+        student.setRejectReason(reason);
+        studentRepository.save(student);
+
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom("coachkonnects@gmail.com", "CoachKonnects Moderation");
+            helper.setTo(student.getUser().getEmail());
+            helper.setSubject("Action Required: Student Profile Registration");
+
+            String htmlContent = "<h1>Action Required</h1>" +
+                    "<p>Hello " + (student.getFullName() != null ? student.getFullName() : "Student") + ",</p>" +
+                    "<p>We reviewed your student profile, but we need you to make some updates before we can approve it.</p>" +
+                    "<p><b>Reason:</b> " + reason + "</p>" +
+                    "<p>Please log in to your dashboard and update your profile to resubmit.</p>";
+
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+        } catch (Exception e) {
+            System.err.println("Failed to send student rejection email: " + e.getMessage());
+        }
+    }
+
+    public void deleteStudentProfile(Long studentId) {
+        StudentProfile student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+        
+        User user = student.getUser();
+        List<AdminFlag> flags = flagRepository.findByUserAndIsResolvedFalse(user);
+        flagRepository.deleteAll(flags);
+        
+        studentRepository.delete(student);
+        userRepository.delete(user);
     }
 
     public void deleteCoachProfile(Long coachId) {

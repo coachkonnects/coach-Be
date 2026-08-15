@@ -208,9 +208,30 @@ public class AdminController {
     public ResponseEntity<?> approveStudent(@PathVariable Long id) {
         try {
             adminService.approveStudentProfile(id);
-            return ResponseEntity.ok("Student profile approved successfully.");
+            return ResponseEntity.ok(Map.of("message", "Student profile approved successfully."));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/students/{id}/reject")
+    public ResponseEntity<?> rejectStudent(@PathVariable Long id, @RequestBody Map<String, String> payload) {
+        try {
+            String reason = payload.getOrDefault("reason", "No reason provided.");
+            adminService.rejectStudentProfile(id, reason);
+            return ResponseEntity.ok(Map.of("message", "Student profile rejected."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/students/{id}")
+    public ResponseEntity<?> deleteStudent(@PathVariable Long id) {
+        try {
+            adminService.deleteStudentProfile(id);
+            return ResponseEntity.ok(Map.of("message", "Student profile deleted."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
 }
