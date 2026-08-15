@@ -197,8 +197,10 @@ public class ProfileController {
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("User not found."));
 
-            StudentProfile profile = studentProfileRepository.findByUser(user)
-                    .orElseThrow(() -> new RuntimeException("Student profile not found."));
+            StudentProfile profile = studentProfileRepository.findByUser(user).orElse(new StudentProfile());
+            if (profile.getUser() == null) {
+                profile.setUser(user);
+            }
 
             return ResponseEntity.ok(Map.of("profile", profile));
         } catch (Exception e) {
@@ -212,8 +214,10 @@ public class ProfileController {
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("User not found."));
 
-            StudentProfile profile = studentProfileRepository.findByUser(user)
-                    .orElseThrow(() -> new RuntimeException("Student profile not found."));
+            StudentProfile profile = studentProfileRepository.findByUser(user).orElse(new StudentProfile());
+            if (profile.getUser() == null) {
+                profile.setUser(user);
+            }
 
             if (req.fullName != null) profile.setFullName(req.fullName);
             if (req.dob != null) profile.setDateOfBirth(req.dob);
@@ -231,7 +235,7 @@ public class ProfileController {
             if (req.parentContact != null) profile.setParentContact(req.parentContact);
 
 
-            profile.setStatus(ProfileStatus.PENDING_APPROVAL); // Require re-approval on edit
+            profile.setStatus(ProfileStatus.APPROVED);
             profile.setRejectReason(null);
 
             StudentProfile saved = studentProfileRepository.save(profile);

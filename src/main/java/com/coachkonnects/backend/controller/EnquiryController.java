@@ -12,8 +12,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.persistence.EntityManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Map;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 
 @RestController
 @RequestMapping("/api/enquiries")
@@ -30,6 +33,12 @@ public class EnquiryController {
 
     @Autowired
     private EntityManager entityManager;
+
+    @Autowired
+    private JavaMailSender mailSender;
+
+    @Value("${app.frontend.url:http://localhost:5173}")
+    private String frontendUrl;
     @PostMapping("/send")
     public ResponseEntity<?> sendEnquiry(@RequestBody Map<String, String> payload) {
         try {
@@ -65,8 +74,7 @@ public class EnquiryController {
             enquiry.setLeadLocation(leadLocation);
             enquiry.setCoach(coach);
             enquiry.setMessage(message);
-            boolean isExistingUser = userRepository.findByEmail(leadEmail).isPresent();
-            enquiry.setStatus(isExistingUser ? EnquiryStatus.PENDING_COACH_APPROVAL : EnquiryStatus.PENDING_ADMIN_APPROVAL);
+            enquiry.setStatus(EnquiryStatus.PENDING_COACH_APPROVAL);
 
             enquiryRepository.save(enquiry);
 
@@ -125,6 +133,21 @@ public class EnquiryController {
             EnquiryStatus status = EnquiryStatus.valueOf(statusStr);
             enquiry.setStatus(status);
             enquiryRepository.save(enquiry);
+
+            if (status == EnquiryStatus.APPROVED) {
+                try {
+                    SimpleMailMessage message = new SimpleMailMessage();
+                    message.setTo(enquiry.getLeadEmail());
+                    message.setSubject("Good news! Your Coach has accepted your enquiry!");
+                    message.setText("Hello " + enquiry.getLeadName() + ",\n\n" +
+                            "Great news! " + enquiry.getCoach().getFullName() + " has approved your enquiry on CoachKonnects.\n\n" +
+                            "Login here: " + frontendUrl + "/login?type=student\n\n" +
+                            "Best regards,\nCoachKonnects Team");
+                    mailSender.send(message);
+                } catch (Exception e) {
+                    System.err.println("Failed to send approval email: " + e.getMessage());
+                }
+            }
 
             return ResponseEntity.ok(Map.of("message", "Status updated successfully!"));
         } catch (Exception e) {

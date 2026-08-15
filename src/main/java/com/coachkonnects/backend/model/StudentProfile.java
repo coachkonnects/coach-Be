@@ -40,7 +40,7 @@ public class StudentProfile {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ProfileStatus status = ProfileStatus.PENDING_APPROVAL;
+    private ProfileStatus status = ProfileStatus.APPROVED;
 
     @Column(length = 500)
     private String rejectReason;
