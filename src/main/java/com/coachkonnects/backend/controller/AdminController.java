@@ -51,9 +51,33 @@ public class AdminController {
             map.put("price", c.getPrice());
             map.put("capacity", c.getCapacity());
             map.put("createdAt", c.getCreatedAt());
+            map.put("status", c.getStatus());
+            map.put("rejectReason", c.getRejectReason());
             map.put("coachEmail", c.getUser() != null ? c.getUser().getEmail() : "Unknown");
             return map;
         }).toList());
+    }
+
+    @PostMapping("/classes/{id}/approve")
+    public ResponseEntity<?> approveClass(@PathVariable Long id) {
+        CoachClass coachClass = classRepository.findById(id).orElseThrow(() -> new RuntimeException("Class not found"));
+        coachClass.setStatus(com.coachkonnects.backend.model.ProfileStatus.APPROVED);
+        coachClass.setRejectReason(null);
+        return ResponseEntity.ok(classRepository.save(coachClass));
+    }
+
+    @PostMapping("/classes/{id}/reject")
+    public ResponseEntity<?> rejectClass(@PathVariable Long id, @RequestBody java.util.Map<String, String> body) {
+        CoachClass coachClass = classRepository.findById(id).orElseThrow(() -> new RuntimeException("Class not found"));
+        coachClass.setStatus(com.coachkonnects.backend.model.ProfileStatus.REJECTED);
+        coachClass.setRejectReason(body.get("reason"));
+        return ResponseEntity.ok(classRepository.save(coachClass));
+    }
+
+    @DeleteMapping("/classes/{id}")
+    public ResponseEntity<?> deleteClassAdmin(@PathVariable Long id) {
+        classRepository.deleteById(id);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/enquiries")

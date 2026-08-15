@@ -31,6 +31,25 @@ public class ClassController {
         return ResponseEntity.ok(classRepository.findByUser(user));
     }
     
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateClass(@PathVariable Long id, @RequestParam String email, @RequestBody CoachClass classReq) {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        CoachClass coachClass = classRepository.findById(id).orElseThrow(() -> new RuntimeException("Class not found"));
+        if (!coachClass.getUser().getId().equals(user.getId())) {
+            return ResponseEntity.status(403).body("Forbidden");
+        }
+        coachClass.setTitle(classReq.getTitle());
+        coachClass.setDescription(classReq.getDescription());
+        coachClass.setSchedule(classReq.getSchedule());
+        coachClass.setPrice(classReq.getPrice());
+        coachClass.setCapacity(classReq.getCapacity());
+        coachClass.setType(classReq.getType());
+        coachClass.setImageUrl(classReq.getImageUrl());
+        coachClass.setStatus(com.coachkonnects.backend.model.ProfileStatus.PENDING_APPROVAL);
+        coachClass.setRejectReason(null);
+        return ResponseEntity.ok(classRepository.save(coachClass));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteClass(@PathVariable Long id, @RequestParam String email) {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));

@@ -22,6 +22,12 @@ public class CoachClass {
     private Integer capacity;
     private String type = "REGULAR";
     
+    @Enumerated(EnumType.STRING)
+    private ProfileStatus status = ProfileStatus.PENDING_APPROVAL;
+    
+    @Column(name = "reject_reason")
+    private String rejectReason;
+    
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
     
@@ -45,6 +51,10 @@ public class CoachClass {
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
     public void setCapacity(Integer capacity) { this.capacity = capacity; }
+    public ProfileStatus getStatus() { return status; }
+    public void setStatus(ProfileStatus status) { this.status = status; }
+    public String getRejectReason() { return rejectReason; }
+    public void setRejectReason(String rejectReason) { this.rejectReason = rejectReason; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     
