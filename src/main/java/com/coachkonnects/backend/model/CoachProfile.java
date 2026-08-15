@@ -1,6 +1,7 @@
 package com.coachkonnects.backend.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.Formula;
 
 @Entity
 @Table(name = "coach_profiles")
@@ -13,6 +14,18 @@ public class CoachProfile {
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
+
+    
+    @Formula("(SELECT COUNT(e.id) FROM enquiries e WHERE e.coach_id = id AND e.status = 'APPROVED')")
+    private Integer studentCount;
+
+    public Integer getStudentCount() {
+        return studentCount != null ? studentCount : 0;
+    }
+
+    public void setStudentCount(Integer studentCount) {
+        this.studentCount = studentCount;
+    }
 
     private String fullName;
     private String dateOfBirth;

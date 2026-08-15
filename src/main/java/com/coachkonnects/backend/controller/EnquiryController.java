@@ -32,6 +32,9 @@ public class EnquiryController {
     private UserRepository userRepository;
 
     @Autowired
+    private com.coachkonnects.backend.repository.StudentProfileRepository studentProfileRepository;
+
+    @Autowired
     private EntityManager entityManager;
 
     @Autowired
@@ -45,14 +48,30 @@ public class EnquiryController {
             String leadEmail   = payload.get("email");
             String coachSlug   = payload.get("coachSlug");
             String message     = payload.get("message");
-            String leadName    = payload.getOrDefault("name", "Visitor");
+            String leadName    = payload.get("name");
             String rawPhone    = payload.get("phone");
-            String leadPhone   = (rawPhone != null && rawPhone.trim().isEmpty()) ? null : rawPhone;
             String leadLocation = payload.get("location");
 
             if (leadEmail == null || coachSlug == null || message == null || message.trim().isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Missing required fields."));
             }
+
+            // If name or phone is empty, try to fetch from registered user profile
+            if ((leadName == null || leadName.trim().isEmpty()) || (rawPhone == null || rawPhone.trim().isEmpty())) {
+                com.coachkonnects.backend.model.User existingUser = userRepository.findByEmail(leadEmail).orElse(null);
+                if (existingUser != null) {
+                    if (rawPhone == null || rawPhone.trim().isEmpty()) rawPhone = existingUser.getPhoneNumber();
+                    com.coachkonnects.backend.model.StudentProfile sp = studentProfileRepository.findByUser(existingUser).orElse(null);
+                    if (sp != null) {
+                        if (leadName == null || leadName.trim().isEmpty()) leadName = sp.getFullName();
+                    }
+                }
+            }
+            
+            leadName = (leadName == null || leadName.trim().isEmpty()) ? "Visitor" : leadName;
+            String leadPhone = (rawPhone != null && rawPhone.trim().isEmpty()) ? null : rawPhone;
+
+
 
             // Find the target coach
             CoachProfile coach = null;

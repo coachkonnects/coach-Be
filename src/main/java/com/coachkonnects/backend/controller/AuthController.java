@@ -5,6 +5,9 @@ import com.coachkonnects.backend.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+
 
 import java.util.Map;
 
@@ -32,7 +35,20 @@ public class AuthController {
             String email = body.get("email").trim().toLowerCase();
             String code = body.get("code").trim();
             
-            User user = authService.verifyOtp(email, code);
+                        User user = authService.verifyOtp(email, code);
+
+            if ("ADMIN".equals(user.getRole())) {
+                try {
+                    SimpleMailMessage message = new SimpleMailMessage();
+                    message.setTo(user.getEmail());
+                    message.setSubject("Security Alert: New Admin Login");
+                    message.setText("Hello Admin,\n\nA new login was just detected on your CoachKonnects admin account.\nIf this was you, you can safely ignore this email.\nIf this wasn't you, please secure your account immediately.");
+                    mailSender.send(message);
+                } catch (Exception ex) {
+                    System.err.println("Failed to send admin login alert: " + ex.getMessage());
+                }
+            }
+
             
             // Note: Returning a simple success message for now. Real JWT generation can be added here.
             return ResponseEntity.ok(Map.of(
