@@ -2,6 +2,7 @@ package com.coachkonnects.backend.model;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
 @Table(name = "coach_classes")
@@ -36,6 +37,12 @@ public class CoachClass {
 
     public CoachClass() {}
     public Long getId() { return id; }
+
+    @JsonProperty("coachId")
+    public Long getCoachId() {
+        return user != null ? user.getId() : null;
+    }
+
     public void setId(Long id) { this.id = id; }
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
