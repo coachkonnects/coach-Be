@@ -46,9 +46,16 @@ public class EnquiryController {
             }
 
             // Find the target coach
-            CoachProfile coach = coachProfileRepository
-                    .findBySlugAndStatusAndIsActiveTrue(coachSlug, com.coachkonnects.backend.model.ProfileStatus.APPROVED)
-                    .orElseThrow(() -> new RuntimeException("Coach not found or not approved."));
+            CoachProfile coach = null;
+            try {
+                Long id = Long.parseLong(coachSlug);
+                coach = coachProfileRepository.findById(id).filter(c -> c.getStatus() == com.coachkonnects.backend.model.ProfileStatus.APPROVED && c.isActive()).orElse(null);
+            } catch (NumberFormatException e) {
+                coach = coachProfileRepository.findBySlugAndStatusAndIsActiveTrue(coachSlug, com.coachkonnects.backend.model.ProfileStatus.APPROVED).orElse(null);
+            }
+            if (coach == null) {
+                throw new RuntimeException("Coach not found or not approved.");
+            }
 
             // Save the lead directly on the enquiry — no User/StudentProfile creation
             Enquiry enquiry = new Enquiry();
@@ -88,6 +95,17 @@ public class EnquiryController {
                     .toList();
 
             return ResponseEntity.ok(filteredEnquiries);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/student")
+    public ResponseEntity<?> getStudentEnquiries(@RequestParam String email) {
+        try {
+            // Find enquiries directly by email since the student might not have an attached StudentProfile on the Enquiry yet
+            var enquiries = enquiryRepository.findByLeadEmail(email);
+            return ResponseEntity.ok(enquiries);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }

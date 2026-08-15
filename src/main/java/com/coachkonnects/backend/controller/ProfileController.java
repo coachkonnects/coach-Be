@@ -149,6 +149,11 @@ public class ProfileController {
             CoachProfile profile = coachProfileRepository.findByUser(user)
                     .orElseThrow(() -> new RuntimeException("Coach profile not found."));
 
+            if (req.mobile != null && !req.mobile.isEmpty()) {
+                user.setPhoneNumber(req.mobile);
+                userRepository.save(user);
+            }
+
             ObjectMapper objectMapper = new ObjectMapper();
             String changesJson = objectMapper.writeValueAsString(req);
 
@@ -252,6 +257,11 @@ public class ProfileController {
                         "This email is already registered with a profile. Please use a different email.");
             }
 
+            if (req.mobile != null && !req.mobile.isEmpty()) {
+                user.setPhoneNumber(req.mobile);
+                userRepository.save(user);
+            }
+
             CoachProfile profile = new CoachProfile();
             profile.setUser(user);
             profile.setFullName(req.fullName);
@@ -301,6 +311,11 @@ public class ProfileController {
                     || studentProfileRepository.findByUser(user).isPresent()) {
                 throw new RuntimeException(
                         "This email is already registered with a profile. Please use a different email.");
+            }
+
+            if (req.mobile != null && !req.mobile.isEmpty()) {
+                user.setPhoneNumber(req.mobile);
+                userRepository.save(user);
             }
 
             StudentProfile profile = new StudentProfile();

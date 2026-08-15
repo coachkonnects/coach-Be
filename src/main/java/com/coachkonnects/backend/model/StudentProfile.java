@@ -164,4 +164,28 @@ public class StudentProfile {
     public void setRejectReason(String rejectReason) {
         this.rejectReason = rejectReason;
     }
+
+    public Boolean getParentalConsent() {
+        return parentalConsent;
+    }
+
+    public void setParentalConsent(Boolean parentalConsent) {
+        this.parentalConsent = parentalConsent;
+    }
+
+    public String getParentName() {
+        return parentName;
+    }
+
+    public void setParentName(String parentName) {
+        this.parentName = parentName;
+    }
+
+    public String getParentContact() {
+        return parentContact;
+    }
+
+    public void setParentContact(String parentContact) {
+        this.parentContact = parentContact;
+    }
 }

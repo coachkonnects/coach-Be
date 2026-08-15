@@ -29,14 +29,25 @@ public class PublicController {
 
     @GetMapping("/coach/{slug}")
     public ResponseEntity<?> getPublicCoachBySlug(@PathVariable String slug) {
-        return coachProfileRepository.findBySlugAndStatusAndIsActiveTrue(slug, ProfileStatus.APPROVED)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        Optional<CoachProfile> coachOpt;
+        try {
+            Long id = Long.parseLong(slug);
+            coachOpt = coachProfileRepository.findById(id).filter(c -> c.getStatus() == ProfileStatus.APPROVED && c.isActive());
+        } catch (NumberFormatException e) {
+            coachOpt = coachProfileRepository.findBySlugAndStatusAndIsActiveTrue(slug, ProfileStatus.APPROVED);
+        }
+        return coachOpt.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/coach/{slug}/classes")
     public ResponseEntity<?> getPublicClassesByCoachSlug(@PathVariable String slug) {
-        Optional<CoachProfile> coachOpt = coachProfileRepository.findBySlugAndStatusAndIsActiveTrue(slug, ProfileStatus.APPROVED);
+        Optional<CoachProfile> coachOpt;
+        try {
+            Long id = Long.parseLong(slug);
+            coachOpt = coachProfileRepository.findById(id).filter(c -> c.getStatus() == ProfileStatus.APPROVED && c.isActive());
+        } catch (NumberFormatException e) {
+            coachOpt = coachProfileRepository.findBySlugAndStatusAndIsActiveTrue(slug, ProfileStatus.APPROVED);
+        }
         if (coachOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }

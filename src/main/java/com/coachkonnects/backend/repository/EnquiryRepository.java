@@ -9,4 +9,5 @@ import java.util.List;
 public interface EnquiryRepository extends JpaRepository<Enquiry, Long> {
     List<Enquiry> findByCoach(CoachProfile coach);
     List<Enquiry> findByStudent(StudentProfile student);
+    List<Enquiry> findByLeadEmail(String leadEmail);
 }
