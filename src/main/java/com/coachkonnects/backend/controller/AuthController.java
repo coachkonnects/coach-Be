@@ -51,7 +51,8 @@ public class AuthController {
             otpTimestamps.put(ip, now);
 
             String email = body.get("email").trim().toLowerCase();
-            authService.requestOtp(email);
+            String intendedRole = body.get("intendedRole");
+            authService.requestOtp(email, intendedRole);
             return ResponseEntity.ok(Map.of("message", "OTP generated and sent to email successfully."));
         } catch (Exception e) {
             // Avoid leaking whether the user exists or not

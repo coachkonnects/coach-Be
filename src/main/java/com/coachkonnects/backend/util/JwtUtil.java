@@ -82,11 +82,11 @@ public class JwtUtil {
         try {
             keyBytes = Decoders.BASE64.decode(secretKey);
         } catch (Exception e) {
-            keyBytes = secretKey.getBytes();
+            String paddedSecret = secretKey + "secure_padding_to_reach_256_bits_for_coachkonnects"; keyBytes = paddedSecret.substring(0, 32).getBytes();
         }
         
         if (keyBytes.length < 32) {
-             keyBytes = secretKey.getBytes();
+             String paddedSecret = secretKey + "secure_padding_to_reach_256_bits_for_coachkonnects"; keyBytes = paddedSecret.substring(0, 32).getBytes();
         }
         return Keys.hmacShaKeyFor(keyBytes);
     }
