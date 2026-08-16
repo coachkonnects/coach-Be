@@ -16,7 +16,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        exposeDirectory("uploads", registry);
+        String uploadPath = System.getProperty("user.home") + "/coachkonnects_uploads";
+        Path uploadDir = Paths.get(uploadPath);
+        registry.addResourceHandler("/api/uploads/**")
+                .addResourceLocations(uploadDir.toUri().toString() + "/");
     }
 
     @Override
@@ -30,15 +33,5 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .excludePathPatterns("/api/enquiries/send");
     }
 
-    private void exposeDirectory(String dirName, ResourceHandlerRegistry registry) {
-        Path uploadDir = Paths.get(dirName);
-        String uploadPath = uploadDir.toFile().getAbsolutePath();
 
-        if (dirName.startsWith("../")) {
-            dirName = dirName.replace("../", "");
-        }
-
-        registry.addResourceHandler("/api/" + dirName + "/**")
-                .addResourceLocations(uploadDir.toUri().toString() + "/");
-    }
 }
