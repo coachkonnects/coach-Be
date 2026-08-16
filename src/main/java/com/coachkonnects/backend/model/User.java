@@ -2,6 +2,7 @@ package com.coachkonnects.backend.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "users")
@@ -17,11 +18,13 @@ public class User {
     @Column(name = "phone_number", unique = true)
     private String phoneNumber;
 
+    @JsonIgnore
     @Column(name = "password_hash")
     private String passwordHash;
 
     private String role = "STUDENT";
 
+    @JsonIgnore
     @Column(name = "totp_secret")
     private String totpSecret;
 

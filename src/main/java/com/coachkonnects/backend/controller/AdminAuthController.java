@@ -33,6 +33,9 @@ public class AdminAuthController {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private com.coachkonnects.backend.util.JwtUtil jwtUtil;
+
     // Simple in-memory map for interim tokens between login and 2FA
     private Map<String, Long> interimTokens = new HashMap<>();
 
@@ -112,7 +115,7 @@ public class AdminAuthController {
 
         if (verifier.isValidCode(user.getTotpSecret(), code)) {
             // Successful 2FA, issue final token
-            String finalToken = UUID.randomUUID().toString(); // In a real app, this is a JWT
+            String finalToken = jwtUtil.generateToken(user.getEmail(), user.getRole());
             interimTokens.remove(interimToken);
             return ResponseEntity.ok(Map.of("status", "SUCCESS", "token", finalToken));
         }

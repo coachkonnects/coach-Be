@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/api/classes")
@@ -19,20 +20,23 @@ public class ClassController {
     private UserRepository userRepository;
 
     @PostMapping
-    public ResponseEntity<?> createClass(@RequestParam String email, @RequestBody CoachClass classReq) {
+    public ResponseEntity<?> createClass(HttpServletRequest request, @RequestBody CoachClass classReq) {
+        String email = (String) request.getAttribute("userEmail");
         User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
         classReq.setUser(user);
         return ResponseEntity.ok(classRepository.save(classReq));
     }
 
     @GetMapping
-    public ResponseEntity<?> getMyClasses(@RequestParam String email) {
+    public ResponseEntity<?> getMyClasses(HttpServletRequest request) {
+        String email = (String) request.getAttribute("userEmail");
         User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
         return ResponseEntity.ok(classRepository.findByUser(user));
     }
     
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateClass(@PathVariable Long id, @RequestParam String email, @RequestBody CoachClass classReq) {
+    public ResponseEntity<?> updateClass(@PathVariable Long id, HttpServletRequest request, @RequestBody CoachClass classReq) {
+        String email = (String) request.getAttribute("userEmail");
         User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
         CoachClass coachClass = classRepository.findById(id).orElseThrow(() -> new RuntimeException("Class not found"));
         if (!coachClass.getUser().getId().equals(user.getId())) {
@@ -51,7 +55,8 @@ public class ClassController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteClass(@PathVariable Long id, @RequestParam String email) {
+    public ResponseEntity<?> deleteClass(@PathVariable Long id, HttpServletRequest request) {
+        String email = (String) request.getAttribute("userEmail");
         User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
         CoachClass coachClass = classRepository.findById(id).orElseThrow(() -> new RuntimeException("Class not found"));
         if (!coachClass.getUser().getId().equals(user.getId())) {

@@ -13,10 +13,12 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Random;
+import java.security.SecureRandom;
 
 @Service
 public class AuthService {
+
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     @Autowired
     private UserRepository userRepository;
@@ -39,7 +41,7 @@ public class AuthService {
             user = userRepository.save(user);
         }
 
-        String otpCode = String.format("%06d", new Random().nextInt(999999));
+        String otpCode = String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
 
         OneTimePassword otp = new OneTimePassword();
         otp.setUserId(user.getId());

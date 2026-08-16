@@ -26,10 +26,23 @@ public class UploadController {
                 Files.createDirectories(uploadPath);
             }
             
+            String contentType = file.getContentType();
+            if (contentType == null || !(contentType.equals("image/jpeg") || contentType.equals("image/png") || contentType.equals("image/webp"))) {
+                return ResponseEntity.badRequest().body("Invalid file type. Only JPG, PNG, and WEBP images are allowed.");
+            }
+
             String originalFileName = file.getOriginalFilename();
-            String extension = originalFileName != null && originalFileName.contains(".") 
+            if (originalFileName == null) {
+                return ResponseEntity.badRequest().body("File must have a name");
+            }
+            
+            String extension = originalFileName.toLowerCase().contains(".") 
                     ? originalFileName.substring(originalFileName.lastIndexOf(".")) 
-                    : ".jpg";
+                    : "";
+                    
+            if (!(extension.equals(".jpg") || extension.equals(".jpeg") || extension.equals(".png") || extension.equals(".webp"))) {
+                return ResponseEntity.badRequest().body("Invalid file extension. Only .jpg, .jpeg, .png, and .webp are allowed.");
+            }
             String newFileName = UUID.randomUUID().toString() + extension;
             
             Path filePath = uploadPath.resolve(newFileName);

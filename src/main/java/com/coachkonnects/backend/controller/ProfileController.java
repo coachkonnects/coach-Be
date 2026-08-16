@@ -120,8 +120,9 @@ public class ProfileController {
     }
 
     @GetMapping("/coach/me")
-    public ResponseEntity<?> getMyCoachProfile(@RequestParam String email) {
+    public ResponseEntity<?> getMyCoachProfile(HttpServletRequest request) {
         try {
+            String email = (String) request.getAttribute("userEmail");
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("User not found."));
 
@@ -141,8 +142,9 @@ public class ProfileController {
     }
 
     @PutMapping("/coach/me")
-    public ResponseEntity<?> updateMyCoachProfile(@RequestParam String email, @RequestBody ProfileRequest req) {
+    public ResponseEntity<?> updateMyCoachProfile(HttpServletRequest request, @RequestBody ProfileRequest req) {
         try {
+            String email = (String) request.getAttribute("userEmail");
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("User not found."));
 
@@ -174,8 +176,9 @@ public class ProfileController {
     }
 
     @PostMapping("/coach/toggle-active")
-    public ResponseEntity<?> toggleActiveStatus(@RequestParam String email) {
+    public ResponseEntity<?> toggleActiveStatus(HttpServletRequest request) {
         try {
+            String email = (String) request.getAttribute("userEmail");
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("User not found."));
 
@@ -192,8 +195,9 @@ public class ProfileController {
     }
 
     @GetMapping("/student/me")
-    public ResponseEntity<?> getMyStudentProfile(@RequestParam String email) {
+    public ResponseEntity<?> getMyStudentProfile(HttpServletRequest request) {
         try {
+            String email = (String) request.getAttribute("userEmail");
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("User not found."));
 
@@ -209,8 +213,9 @@ public class ProfileController {
     }
 
     @PutMapping("/student/me")
-    public ResponseEntity<?> updateMyStudentProfile(@RequestParam String email, @RequestBody ProfileRequest req) {
+    public ResponseEntity<?> updateMyStudentProfile(HttpServletRequest request, @RequestBody ProfileRequest req) {
         try {
+            String email = (String) request.getAttribute("userEmail");
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("User not found."));
 

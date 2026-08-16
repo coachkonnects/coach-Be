@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.persistence.EntityManager;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Value;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.Map;
 import org.springframework.mail.SimpleMailMessage;
@@ -106,8 +107,9 @@ public class EnquiryController {
     }
 
     @GetMapping("/coach")
-    public ResponseEntity<?> getCoachEnquiries(@RequestParam String email) {
+    public ResponseEntity<?> getCoachEnquiries(HttpServletRequest request) {
         try {
+            String email = (String) request.getAttribute("userEmail");
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("User not found."));
 
@@ -128,8 +130,9 @@ public class EnquiryController {
     }
 
     @GetMapping("/student")
-    public ResponseEntity<?> getStudentEnquiries(@RequestParam String email) {
+    public ResponseEntity<?> getStudentEnquiries(HttpServletRequest request) {
         try {
+            String email = (String) request.getAttribute("userEmail");
             // Find enquiries directly by email since the student might not have an attached StudentProfile on the Enquiry yet
             var enquiries = enquiryRepository.findByLeadEmail(email);
             return ResponseEntity.ok(enquiries);

@@ -88,11 +88,15 @@ public class PasskeyController {
         return ResponseEntity.ok(options);
     }
 
+    @Autowired
+    private com.coachkonnects.backend.util.JwtUtil jwtUtil;
+
     @PostMapping("/login/finish")
     public ResponseEntity<?> finishLogin(@RequestBody Map<String, Object> request) {
         System.out.println("Passkey login received: " + request);
-
-        String finalToken = UUID.randomUUID().toString();
-        return ResponseEntity.ok(Map.of("status", "SUCCESS", "token", finalToken));
+        
+        // Passkey login is temporarily disabled due to lack of cryptographic signature verification.
+        // Users must use OTP login.
+        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).body(Map.of("message", "Passkey login is temporarily disabled for security reasons. Please use OTP login."));
     }
 }
