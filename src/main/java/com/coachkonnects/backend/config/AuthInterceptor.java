@@ -14,26 +14,33 @@ public class AuthInterceptor implements HandlerInterceptor {
     private JwtUtil jwtUtil;
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        // OPTIONS requests are typically for CORS preflight, allow them
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+            throws Exception {
         if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
             return true;
+        }
+
+        String uri = request.getRequestURI();
+        if ("GET".equalsIgnoreCase(request.getMethod())) {
+            if (uri.startsWith("/api/profile/") || uri.startsWith("/api/classes/")) {
+                return true;
+            }
         }
 
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
-            
+
             try {
                 if (jwtUtil.validateTokenWithoutEmailCheck(token)) {
                     // Token is valid, set attributes for controllers to use
                     String email = jwtUtil.extractEmail(token);
                     String role = jwtUtil.extractRole(token);
-                    
+
                     request.setAttribute("userEmail", email);
                     request.setAttribute("userRole", role);
-                    
+
                     // If hitting an admin route, ensure they have the ADMIN role
                     if (request.getRequestURI().startsWith("/api/admin")) {
                         if (!"ADMIN".equals(role)) {
@@ -41,7 +48,7 @@ public class AuthInterceptor implements HandlerInterceptor {
                             return false;
                         }
                     }
-                    
+
                     return true;
                 }
             } catch (Exception e) {
@@ -51,7 +58,8 @@ public class AuthInterceptor implements HandlerInterceptor {
             }
         }
 
-        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized: Missing or invalid Authorization header.");
+        response.sendError(HttpServletResponse.SC_UNAUTHORIZED,
+                "Unauthorized: Missing or invalid Authorization header.");
         return false;
     }
 }

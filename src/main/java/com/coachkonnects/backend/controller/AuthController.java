@@ -69,8 +69,22 @@ public class AuthController {
             User user = authService.verifyOtp(email, code);
 
             if ("ADMIN".equals(user.getRole())) {
+                java.util.List<String> allowedAdmins = java.util.Arrays.asList("kavita.ganatra2@gmail.com", "sameer.rcssoft@gmail.com");
+                if (!allowedAdmins.contains(email)) {
+                    try {
+                        org.springframework.mail.SimpleMailMessage alert = new org.springframework.mail.SimpleMailMessage();
+                        alert.setTo("kavita.ganatra2@gmail.com", "sameer.rcssoft@gmail.com");
+                        alert.setSubject("CRITICAL SECURITY ALERT: Unauthorized Admin Login Attempt");
+                        alert.setText("Someone with the email address " + email + " just attempted to log into the CoachKonnects Admin Portal.\n\nTheir access was successfully BLOCKED by the security firewall.\n\nPlease review your admin accounts immediately.");
+                        mailSender.send(alert);
+                    } catch (Exception ex) {
+                        System.err.println("Failed to send admin security alert: " + ex.getMessage());
+                    }
+                    throw new RuntimeException("Unauthorized: Your email address is not whitelisted for Admin access.");
+                }
+
                 try {
-                    SimpleMailMessage message = new SimpleMailMessage();
+                    org.springframework.mail.SimpleMailMessage message = new org.springframework.mail.SimpleMailMessage();
                     message.setTo(user.getEmail());
                     message.setSubject("Security Alert: New Admin Login");
                     message.setText("Hello Admin,\n\nA new login was just detected on your CoachKonnects admin account.\nIf this was you, you can safely ignore this email.\nIf this wasn't you, please secure your account immediately.");
