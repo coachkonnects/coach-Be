@@ -4,6 +4,8 @@ import com.coachkonnects.backend.model.CoachProfile;
 import com.coachkonnects.backend.model.StudentProfile;
 import com.coachkonnects.backend.model.User;
 import com.coachkonnects.backend.repository.CoachProfileRepository;
+import com.coachkonnects.backend.repository.CategoryRepository;
+import com.coachkonnects.backend.model.Category;
 import com.coachkonnects.backend.repository.StudentProfileRepository;
 import com.coachkonnects.backend.repository.UserRepository;
 import com.coachkonnects.backend.repository.IpTrackingRepository;
@@ -23,6 +25,7 @@ import com.coachkonnects.backend.repository.AdminFlagRepository;
 import com.coachkonnects.backend.repository.EnquiryRepository;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.UUID;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -35,6 +38,9 @@ public class ProfileController {
 
     @Autowired
     private CoachProfileRepository coachProfileRepository;
+
+    @Autowired
+    private CategoryRepository categoryRepository;
 
     @Autowired
     private StudentProfileRepository studentProfileRepository;
@@ -96,6 +102,7 @@ public class ProfileController {
         public Boolean parentalConsent;
         public String parentName;
         public String parentContact;
+        public String parentEmail;
 
     }
 
@@ -207,9 +214,11 @@ public class ProfileController {
     }
 
     @GetMapping("/student/me")
-    public ResponseEntity<?> getMyStudentProfile(HttpServletRequest request) {
+    public ResponseEntity<?> getMyStudentProfile(HttpServletRequest request, @RequestParam(required = false) String email) {
         try {
-            String email = (String) request.getAttribute("userEmail");
+            if (email == null || email.isEmpty()) {
+                email = (String) request.getAttribute("userEmail");
+            }
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("User not found."));
 
@@ -264,6 +273,8 @@ public class ProfileController {
                 profile.setParentName(req.parentName);
             if (req.parentContact != null)
                 profile.setParentContact(req.parentContact);
+            if (req.parentEmail != null)
+                profile.setParentEmail(req.parentEmail);
 
             profile.setStatus(ProfileStatus.APPROVED);
             profile.setRejectReason(null);
@@ -296,6 +307,14 @@ public class ProfileController {
                 userRepository.save(user);
             }
 
+
+            if (req.category != null && !req.category.isEmpty()) {
+                if (categoryRepository.findByName(req.category).isEmpty()) {
+                    Category newCat = new Category();
+                    newCat.setName(req.category);
+                    categoryRepository.save(newCat);
+                }
+            }
             CoachProfile profile = new CoachProfile();
             profile.setUser(user);
             profile.setFullName(req.fullName);
@@ -408,11 +427,56 @@ public class ProfileController {
             profile.setParentalConsent(req.parentalConsent);
             profile.setParentName(req.parentName);
             profile.setParentContact(req.parentContact);
+            profile.setParentEmail(req.parentEmail);
 
-            StudentProfile saved = studentProfileRepository.save(profile);
-            return ResponseEntity.ok(saved);
+            boolean isUnder18 = false;
+            try {
+                if (req.dob != null && !req.dob.isEmpty()) {
+                    int birthYear = Integer.parseInt(req.dob.split("-")[0]);
+                    int currentYear = LocalDateTime.now().getYear();
+                    if (currentYear - birthYear < 18) {
+                        isUnder18 = true;
+                    }
+                }
+            } catch (Exception e) {}
+
+            if (isUnder18 && req.parentEmail != null && !req.parentEmail.isEmpty()) {
+                String token = UUID.randomUUID().toString();
+                profile.setConsentToken(token);
+                profile.setParentConsentVerified(false);
+                sendParentalConsentEmail(req.parentEmail, req.fullName, token);
+            } else {
+                profile.setParentConsentVerified(true);
+            }
+
+            studentProfileRepository.save(profile);
+            return ResponseEntity.ok(Map.of("message", "Student profile created successfully!"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/verify-consent/{token}")
+    public ResponseEntity<?> verifyConsent(@PathVariable String token) {
+        return studentProfileRepository.findByConsentToken(token).map(profile -> {
+            profile.setParentConsentVerified(true);
+            profile.setConsentToken(null);
+            studentProfileRepository.save(profile);
+            return ResponseEntity.ok("Parental consent verified successfully!");
+        }).orElse(ResponseEntity.badRequest().body("Invalid or expired token."));
+    }
+
+    private void sendParentalConsentEmail(String email, String studentName, String token) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setTo(email);
+            helper.setSubject("Parental Consent Request - CoachKonnects");
+            String url = "http://localhost:8080/api/profile/verify-consent/" + token; // Backend API endpoint
+            helper.setText("<h1>Parental Consent</h1><p>Please click the link below to verify your consent for " + studentName + ":</p><a href='" + url + "'>Verify Consent</a>", true);
+            mailSender.send(message);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

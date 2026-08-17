@@ -37,6 +37,13 @@ public class StudentProfile {
     
     private String parentContact;
 
+    private String parentEmail;
+
+    private String consentToken;
+
+    @Column(columnDefinition = "boolean default false")
+    private Boolean parentConsentVerified = false;
+
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -187,5 +194,29 @@ public class StudentProfile {
 
     public void setParentContact(String parentContact) {
         this.parentContact = parentContact;
+    }
+
+    public String getParentEmail() {
+        return parentEmail;
+    }
+
+    public void setParentEmail(String parentEmail) {
+        this.parentEmail = parentEmail;
+    }
+
+    public String getConsentToken() {
+        return consentToken;
+    }
+
+    public void setConsentToken(String consentToken) {
+        this.consentToken = consentToken;
+    }
+
+    public Boolean getParentConsentVerified() {
+        return parentConsentVerified;
+    }
+
+    public void setParentConsentVerified(Boolean parentConsentVerified) {
+        this.parentConsentVerified = parentConsentVerified;
     }
 }
