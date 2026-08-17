@@ -8,7 +8,7 @@ public class CoachkonnectsBackendApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(CoachkonnectsBackendApplication.class, args);
-		System.out.println("Coach is started 😊😊😊");
+		System.out.println("Coach is started 😊😊");
 	}
 
 }
