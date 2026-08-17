@@ -52,6 +52,21 @@ public class AuthController {
 
             String email = body.get("email").trim().toLowerCase();
             String intendedRole = body.get("intendedRole");
+
+            if ("ADMIN".equalsIgnoreCase(intendedRole)) {
+                java.util.List<String> allowedAdmins = java.util.Arrays.asList("kavita.ganatra2@gmail.com", "sameer.rcssoft@gmail.com");
+                if (!allowedAdmins.contains(email)) {
+                    try {
+                        org.springframework.mail.SimpleMailMessage alert = new org.springframework.mail.SimpleMailMessage();
+                        alert.setTo("kavita.ganatra2@gmail.com", "sameer.rcssoft@gmail.com");
+                        alert.setSubject("CRITICAL SECURITY ALERT: Unauthorized Admin Login Attempt");
+                        alert.setText("Someone with the email address " + email + " just attempted to request an OTP for the Admin Portal.\n\nTheir access was successfully BLOCKED.\n\nPlease review your admin accounts immediately.");
+                        mailSender.send(alert);
+                    } catch (Exception ex) {}
+                    return ResponseEntity.status(401).body(Map.of("error", "Unauthorized: Your email address is not whitelisted for Admin access."));
+                }
+            }
+
             authService.requestOtp(email, intendedRole);
             return ResponseEntity.ok(Map.of("message", "OTP generated and sent to email successfully."));
         } catch (Exception e) {
@@ -65,7 +80,22 @@ public class AuthController {
         try {
             String email = body.get("email").trim().toLowerCase();
             String code = body.get("code").trim();
+            String intendedRole = body.get("intendedRole");
             
+            if ("ADMIN".equalsIgnoreCase(intendedRole)) {
+                java.util.List<String> allowedAdmins = java.util.Arrays.asList("kavita.ganatra2@gmail.com", "sameer.rcssoft@gmail.com");
+                if (!allowedAdmins.contains(email)) {
+                    try {
+                        org.springframework.mail.SimpleMailMessage alert = new org.springframework.mail.SimpleMailMessage();
+                        alert.setTo("kavita.ganatra2@gmail.com", "sameer.rcssoft@gmail.com");
+                        alert.setSubject("CRITICAL SECURITY ALERT: Unauthorized Admin Login Attempt");
+                        alert.setText("Someone with the email address " + email + " just attempted to VERIFY an OTP for the Admin Portal.\n\nTheir access was successfully BLOCKED.\n\nPlease review your admin accounts immediately.");
+                        mailSender.send(alert);
+                    } catch (Exception ex) {}
+                    return ResponseEntity.status(401).body(Map.of("error", "Unauthorized: Your email address is not whitelisted for Admin access."));
+                }
+            }
+
             User user = authService.verifyOtp(email, code);
 
             if ("ADMIN".equals(user.getRole())) {
