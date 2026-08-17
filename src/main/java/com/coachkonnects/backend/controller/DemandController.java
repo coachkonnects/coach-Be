@@ -21,10 +21,14 @@ public class DemandController {
         String skillName = payload.get("skillName");
         String location = payload.get("location");
         String email = payload.get("email");
+        String mobileNumber = payload.get("mobileNumber");
+        String pincode = payload.get("pincode");
 
         if (skillName == null || skillName.trim().isEmpty() || 
             location == null || location.trim().isEmpty() || 
-            email == null || email.trim().isEmpty()) {
+            email == null || email.trim().isEmpty() ||
+            mobileNumber == null || mobileNumber.trim().isEmpty() ||
+            pincode == null || pincode.trim().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "All fields are required."));
         }
 
@@ -32,6 +36,8 @@ public class DemandController {
         demand.setSkillName(skillName.trim());
         demand.setLocation(location.trim());
         demand.setEmail(email.trim());
+        demand.setMobileNumber(mobileNumber.trim());
+        demand.setPincode(pincode.trim());
         demand.setApproved(false);
         demandRepository.save(demand);
 

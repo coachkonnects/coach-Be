@@ -20,6 +20,10 @@ public class Demand {
     @Column(nullable = false)
     private String email;
 
+    private String mobileNumber;
+
+    private String pincode;
+
     private LocalDateTime createdAt;
 
     @Column(columnDefinition = "boolean default false")
@@ -41,6 +45,12 @@ public class Demand {
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+
+    public String getMobileNumber() { return mobileNumber; }
+    public void setMobileNumber(String mobileNumber) { this.mobileNumber = mobileNumber; }
+
+    public String getPincode() { return pincode; }
+    public void setPincode(String pincode) { this.pincode = pincode; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
 

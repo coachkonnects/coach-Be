@@ -17,6 +17,9 @@ public class Category {
     @Column(columnDefinition = "boolean default true")
     private boolean isApproved = true;
 
+    @Column(columnDefinition = "TEXT")
+    private String expertises;
+
     public Category() {}
 
     public Category(String name) {
@@ -29,4 +32,7 @@ public class Category {
 
     public boolean isApproved() { return isApproved; }
     public void setApproved(boolean approved) { isApproved = approved; }
+
+    public String getExpertises() { return expertises; }
+    public void setExpertises(String expertises) { this.expertises = expertises; }
 }

@@ -33,6 +33,7 @@ public class CategoryController {
 
     static class CategoryRequest {
         public String name;
+        public String expertises;
     }
 
     @PostMapping("/categories")
@@ -41,6 +42,9 @@ public class CategoryController {
             return ResponseEntity.badRequest().body("Name is required");
         }
         Category cat = new Category(req.name.trim());
+        if (req.expertises != null) {
+            cat.setExpertises(req.expertises.trim());
+        }
         categoryRepository.save(cat);
         return ResponseEntity.ok(cat);
     }
@@ -66,11 +70,17 @@ public class CategoryController {
     @PutMapping("/admin/categories/{id}/edit")
     public ResponseEntity<?> editCategory(@PathVariable Long id, @RequestBody Map<String, String> payload) {
         String newName = payload.get("name");
+        String newExpertises = payload.get("expertises");
         if (newName == null || newName.trim().isEmpty()) {
             return ResponseEntity.badRequest().body("Name is required");
         }
         return categoryRepository.findById(id).map(cat -> {
             cat.setName(newName.trim());
+            if (newExpertises != null) {
+                cat.setExpertises(newExpertises.trim());
+            } else if (payload.containsKey("expertises")) {
+                cat.setExpertises("");
+            }
             categoryRepository.save(cat);
             return ResponseEntity.ok(cat);
         }).orElse(ResponseEntity.notFound().build());
