@@ -150,7 +150,7 @@ public class AdminService {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom("coachkonnects@gmail.com", "CoachKonnects Security");
+            helper.setFrom("support@coachkonnects.com", "CoachKonnects Security");
             helper.setTo(coach.getUser().getEmail());
             helper.setSubject("Your Coach Profile is Approved!");
 
@@ -185,7 +185,7 @@ public class AdminService {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom("coachkonnects@gmail.com", "CoachKonnects Security");
+            helper.setFrom("support@coachkonnects.com", "CoachKonnects Security");
             helper.setTo(coach.getUser().getEmail());
             helper.setSubject("Action Required: Coach Profile Update Rejected");
 
@@ -211,7 +211,7 @@ public class AdminService {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom("coachkonnects@gmail.com", "CoachKonnects Registration");
+            helper.setFrom("support@coachkonnects.com", "CoachKonnects Registration");
             helper.setTo(student.getUser().getEmail());
             helper.setSubject("Your Student Profile is Approved!");
 
@@ -236,7 +236,7 @@ public class AdminService {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom("coachkonnects@gmail.com", "CoachKonnects Moderation");
+            helper.setFrom("support@coachkonnects.com", "CoachKonnects Moderation");
             helper.setTo(student.getUser().getEmail());
             helper.setSubject("Action Required: Student Profile Registration");
 
@@ -283,5 +283,45 @@ public class AdminService {
                 .orElseThrow(() -> new RuntimeException("Coach not found"));
         coach.setActive(!coach.isActive());
         coachRepository.save(coach);
+    }
+
+    public void updateCoachCategory(Long coachId, String category) {
+        CoachProfile coach = coachRepository.findById(coachId)
+                .orElseThrow(() -> new RuntimeException("Coach not found"));
+        coach.setCategory(category);
+        coachRepository.save(coach);
+    }
+
+    public void updateCoachExpertise(Long coachId, String expertise) {
+        CoachProfile coach = coachRepository.findById(coachId)
+                .orElseThrow(() -> new RuntimeException("Coach not found"));
+        coach.setExpertise(expertise);
+        coachRepository.save(coach);
+    }
+
+    public int reslugAllCoaches() {
+        java.util.List<CoachProfile> allCoaches = coachRepository.findAll();
+        int count = 0;
+        for (CoachProfile coach : allCoaches) {
+            String name = coach.getFullName() != null
+                    ? coach.getFullName().toLowerCase().replaceAll("[^a-z0-9]", "-").replaceAll("-+", "-").replaceAll("-$", "")
+                    : "coach";
+            String expertise = coach.getExpertise() != null
+                    ? coach.getExpertise().toLowerCase().replaceAll("[^a-z0-9]", "-").replaceAll("-+", "-").replaceAll("-$", "")
+                    : "";
+            String location = coach.getDistrict() != null
+                    ? coach.getDistrict().toLowerCase().replaceAll("[^a-z0-9]", "-").replaceAll("-+", "-").replaceAll("-$", "")
+                    : "";
+
+            StringBuilder newSlug = new StringBuilder(name);
+            if (!expertise.isEmpty()) newSlug.append("-").append(expertise);
+            if (!location.isEmpty()) newSlug.append("-").append(location);
+            newSlug.append("-coach-").append(java.util.UUID.randomUUID().toString().substring(0, 4));
+
+            coach.setSlug(newSlug.toString());
+            coachRepository.save(coach);
+            count++;
+        }
+        return count;
     }
 }

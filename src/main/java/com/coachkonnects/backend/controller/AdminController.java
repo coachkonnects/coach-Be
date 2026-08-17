@@ -234,4 +234,42 @@ public class AdminController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+    @PutMapping("/coaches/{id}/category")
+    public ResponseEntity<?> updateCoachCategory(@PathVariable Long id, @RequestBody java.util.Map<String, String> payload) {
+        try {
+            String newCategory = payload.get("category");
+            if (newCategory == null || newCategory.trim().isEmpty()) {
+                throw new RuntimeException("Category is required");
+            }
+            adminService.updateCoachCategory(id, newCategory.trim());
+            return ResponseEntity.ok(java.util.Map.of("message", "Category updated successfully."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/coaches/{id}/expertise")
+    public ResponseEntity<?> updateCoachExpertise(@PathVariable Long id, @RequestBody java.util.Map<String, String> payload) {
+        try {
+            String newExpertise = payload.get("expertise");
+            if (newExpertise == null || newExpertise.trim().isEmpty()) {
+                throw new RuntimeException("Expertise is required");
+            }
+            adminService.updateCoachExpertise(id, newExpertise.trim());
+            return ResponseEntity.ok(java.util.Map.of("message", "Expertise updated successfully."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/coaches/reslug-all")
+    public ResponseEntity<?> reslugAllCoaches() {
+        try {
+            int count = adminService.reslugAllCoaches();
+            return ResponseEntity.ok(java.util.Map.of("message", "Re-slugged " + count + " coaches successfully."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
 }

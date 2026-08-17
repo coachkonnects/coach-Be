@@ -12,6 +12,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.coachkonnects.backend.model.Demand;
+import com.coachkonnects.backend.repository.DemandRepository;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import jakarta.mail.internet.MimeMessage;
 import com.coachkonnects.backend.model.AdminFlag;
 import com.coachkonnects.backend.model.ProfileStatus;
 import com.coachkonnects.backend.repository.AdminFlagRepository;
@@ -38,6 +43,12 @@ public class ProfileController {
     private UserRepository userRepository;
 
     @Autowired
+    private DemandRepository demandRepository;
+
+    @Autowired
+    private JavaMailSender mailSender;
+
+    @Autowired
     private IpTrackingRepository ipTrackingRepository;
 
     @Autowired
@@ -57,6 +68,7 @@ public class ProfileController {
 
     public static class ProfileRequest {
         public String email;
+        public Long demandId; // Optional link to a specific demand
         public String fullName;
         public String mobile;
         public String dob;
@@ -224,21 +236,34 @@ public class ProfileController {
                 profile.setUser(user);
             }
 
-            if (req.fullName != null) profile.setFullName(req.fullName);
-            if (req.dob != null) profile.setDateOfBirth(req.dob);
-            if (req.gender != null) profile.setGender(req.gender);
-            if (req.district != null) profile.setDistrict(req.district);
-            if (req.state != null) profile.setState(req.state);
-            if (req.pincode != null) profile.setPincode(req.pincode);
-            if (req.area != null) profile.setArea(req.area);
-            if (req.location != null) profile.setLocation(req.location);
-            if (req.interests != null) profile.setInterests(req.interests);
-            if (req.preference != null) profile.setPreference(req.preference);
-            if (req.heardFrom != null) profile.setHeardFrom(req.heardFrom);
-            if (req.parentalConsent != null) profile.setParentalConsent(req.parentalConsent);
-            if (req.parentName != null) profile.setParentName(req.parentName);
-            if (req.parentContact != null) profile.setParentContact(req.parentContact);
-
+            if (req.fullName != null)
+                profile.setFullName(req.fullName);
+            if (req.dob != null)
+                profile.setDateOfBirth(req.dob);
+            if (req.gender != null)
+                profile.setGender(req.gender);
+            if (req.district != null)
+                profile.setDistrict(req.district);
+            if (req.state != null)
+                profile.setState(req.state);
+            if (req.pincode != null)
+                profile.setPincode(req.pincode);
+            if (req.area != null)
+                profile.setArea(req.area);
+            if (req.location != null)
+                profile.setLocation(req.location);
+            if (req.interests != null)
+                profile.setInterests(req.interests);
+            if (req.preference != null)
+                profile.setPreference(req.preference);
+            if (req.heardFrom != null)
+                profile.setHeardFrom(req.heardFrom);
+            if (req.parentalConsent != null)
+                profile.setParentalConsent(req.parentalConsent);
+            if (req.parentName != null)
+                profile.setParentName(req.parentName);
+            if (req.parentContact != null)
+                profile.setParentContact(req.parentContact);
 
             profile.setStatus(ProfileStatus.APPROVED);
             profile.setRejectReason(null);
@@ -296,10 +321,50 @@ public class ProfileController {
             profile.setIntroVideoUrl(req.introVideoUrl);
             profile.setSocialLinks(req.socialLinks);
 
-            String baseSlug = req.fullName.toLowerCase().replace(" ", "-") + "-coach";
-            profile.setSlug(baseSlug + "-" + System.currentTimeMillis());
+            String cleanName = req.fullName != null ? req.fullName.toLowerCase().replaceAll("[^a-z0-9]", "-").replaceAll("-+", "-").replaceAll("-$", "") : "coach";
+            String cleanExpertise = req.expertise != null ? req.expertise.toLowerCase().replaceAll("[^a-z0-9]", "-").replaceAll("-+", "-").replaceAll("-$", "") : "";
+            String cleanLocation = req.district != null ? req.district.toLowerCase().replaceAll("[^a-z0-9]", "-").replaceAll("-+", "-").replaceAll("-$", "") : "";
+
+            StringBuilder slugBuilder = new StringBuilder(cleanName);
+            if (!cleanExpertise.isEmpty()) {
+                slugBuilder.append("-").append(cleanExpertise);
+            }
+            if (!cleanLocation.isEmpty()) {
+                slugBuilder.append("-").append(cleanLocation);
+            }
+            // Add a very short 4-character random string to guarantee uniqueness without looking ugly
+            slugBuilder.append("-coach-").append(java.util.UUID.randomUUID().toString().substring(0, 4));
+
+            profile.setSlug(slugBuilder.toString());
 
             CoachProfile saved = coachProfileRepository.save(profile);
+
+            if (req.demandId != null) {
+                demandRepository.findById(req.demandId).ifPresent(demand -> {
+                    try {
+                        MimeMessage message = mailSender.createMimeMessage();
+                        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+                        helper.setFrom("support@coachkonnects.com", "CoachKonnects Alerts");
+                        helper.setTo(demand.getEmail());
+                        helper.setSubject("A Coach just applied for your request!");
+
+                        String htmlContent = "<h1>Great News!</h1>"
+                                + "<p>Hello,</p>"
+                                + "<p>You recently requested a class for <b>" + demand.getSkillName() + "</b> in "
+                                + demand.getLocation() + ".</p>"
+                                + "<p>A coach named <b>" + profile.getFullName()
+                                + "</b> has just applied to teach it!</p>"
+                                + "<p>Their profile is currently undergoing verification by our team. You will be notified once they are approved and LIVE.</p>"
+                                + "<br/><p>Best regards,<br/>The CoachKonnects Team</p>";
+
+                        helper.setText(htmlContent, true);
+                        mailSender.send(message);
+                    } catch (Exception ex) {
+                        System.err.println("Failed to send demand notification email: " + ex.getMessage());
+                    }
+                });
+            }
+
             return ResponseEntity.ok(saved);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error saving coach profile: " + e.getMessage());
@@ -343,7 +408,6 @@ public class ProfileController {
             profile.setParentalConsent(req.parentalConsent);
             profile.setParentName(req.parentName);
             profile.setParentContact(req.parentContact);
-
 
             StudentProfile saved = studentProfileRepository.save(profile);
             return ResponseEntity.ok(saved);

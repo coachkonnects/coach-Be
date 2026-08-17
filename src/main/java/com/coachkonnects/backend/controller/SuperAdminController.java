@@ -70,7 +70,7 @@ public class SuperAdminController {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
-            helper.setFrom("coachkonnects@gmail.com", "CoachKonnects Security");
+            helper.setFrom("support@coachkonnects.com", "CoachKonnects Security");
             helper.setTo(to);
             helper.setSubject("You've been invited as a Super Admin!");
 

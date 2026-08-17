@@ -57,7 +57,7 @@ public class AuthService {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
-            helper.setFrom("coachkonnects@gmail.com", "CoachKonnects Security");
+            helper.setFrom("support@coachkonnects.com", "CoachKonnects Security");
             helper.setTo(to);
             
             String title = role.equalsIgnoreCase("ADMIN") ? "Admin Access" : 

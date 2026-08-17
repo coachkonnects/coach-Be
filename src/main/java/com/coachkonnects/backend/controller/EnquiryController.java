@@ -159,6 +159,7 @@ public class EnquiryController {
             if (status == EnquiryStatus.APPROVED) {
                 try {
                     SimpleMailMessage message = new SimpleMailMessage();
+                    message.setFrom("support@coachkonnects.com");
                     message.setTo(enquiry.getLeadEmail());
                     message.setSubject("Good news! Your Coach has accepted your enquiry!");
                     message.setText("Hello " + enquiry.getLeadName() + ",\n\n" +
