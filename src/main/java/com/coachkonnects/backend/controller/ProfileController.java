@@ -302,6 +302,27 @@ public class ProfileController {
                         "This email is already registered with a profile. Please use a different email.");
             }
 
+            if (req.mobile != null && !req.mobile.trim().isEmpty()) {
+                java.util.Optional<User> existingMobile = userRepository.findByPhoneNumber(req.mobile.trim());
+                if (existingMobile.isPresent() && !existingMobile.get().getId().equals(user.getId())) {
+                    throw new RuntimeException("This phone number is already registered. Please use a different phone number.");
+                }
+            }
+
+            if (req.mobile != null && !req.mobile.trim().isEmpty()) {
+                java.util.Optional<User> existingMobile = userRepository.findByPhoneNumber(req.mobile.trim());
+                if (existingMobile.isPresent() && !existingMobile.get().getId().equals(user.getId())) {
+                    throw new RuntimeException("This phone number is already registered. Please use a different phone number.");
+                }
+            }
+
+            if (req.socialLinks != null && !req.socialLinks.trim().isEmpty()) {
+                java.util.Optional<com.coachkonnects.backend.model.CoachProfile> existingCoach = coachProfileRepository.findBySocialLinks(req.socialLinks.trim());
+                if (existingCoach.isPresent() && !existingCoach.get().getUser().getId().equals(user.getId())) {
+                    throw new RuntimeException("This Instagram handle is already registered. Please use a different one.");
+                }
+            }
+
             if (req.mobile != null && !req.mobile.isEmpty()) {
                 user.setPhoneNumber(req.mobile);
                 userRepository.save(user);
@@ -312,6 +333,7 @@ public class ProfileController {
                 if (categoryRepository.findByName(req.category).isEmpty()) {
                     Category newCat = new Category();
                     newCat.setName(req.category);
+                    newCat.setApproved(false);
                     categoryRepository.save(newCat);
                 }
             }
@@ -404,6 +426,13 @@ public class ProfileController {
                     || studentProfileRepository.findByUser(user).isPresent()) {
                 throw new RuntimeException(
                         "This email is already registered with a profile. Please use a different email.");
+            }
+
+            if (req.mobile != null && !req.mobile.trim().isEmpty()) {
+                java.util.Optional<User> existingMobile = userRepository.findByPhoneNumber(req.mobile.trim());
+                if (existingMobile.isPresent() && !existingMobile.get().getId().equals(user.getId())) {
+                    throw new RuntimeException("This phone number is already registered. Please use a different phone number.");
+                }
             }
 
             if (req.mobile != null && !req.mobile.isEmpty()) {

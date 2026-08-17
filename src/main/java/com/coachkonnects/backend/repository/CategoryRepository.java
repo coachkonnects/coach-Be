@@ -9,4 +9,6 @@ import org.springframework.stereotype.Repository;
 
 public interface CategoryRepository extends JpaRepository<Category, Long> {
     Optional<Category> findByName(String name);
+    java.util.List<Category> findByIsApprovedTrue();
+    java.util.List<Category> findByIsApprovedFalse();
 }

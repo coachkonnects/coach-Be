@@ -13,4 +13,5 @@ public interface CoachProfileRepository extends JpaRepository<CoachProfile, Long
     List<CoachProfile> findByStatusAndIsActiveTrue(ProfileStatus status);
     Optional<CoachProfile> findByUser(User user);
     Optional<CoachProfile> findBySlugAndStatusAndIsActiveTrue(String slug, ProfileStatus status);
+    Optional<CoachProfile> findBySocialLinks(String socialLinks);
 }

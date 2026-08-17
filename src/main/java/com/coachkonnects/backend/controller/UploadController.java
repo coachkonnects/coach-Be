@@ -14,7 +14,7 @@ import java.util.Map;
 @RequestMapping("/api/upload")
 public class UploadController {
     
-    private final String UPLOAD_DIR = "uploads/";
+    private final String UPLOAD_DIR = System.getProperty("user.dir") + "/uploads/";
     
     @PostMapping
     public ResponseEntity<?> uploadImage(@RequestParam("file") MultipartFile file) {

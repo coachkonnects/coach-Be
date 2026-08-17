@@ -4,6 +4,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Column;
 
 @Entity
 public class Category {
@@ -12,6 +13,9 @@ public class Category {
     private Long id;
 
     private String name;
+
+    @Column(columnDefinition = "boolean default true")
+    private boolean isApproved = true;
 
     public Category() {}
 
@@ -22,4 +26,7 @@ public class Category {
     public Long getId() { return id; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+
+    public boolean isApproved() { return isApproved; }
+    public void setApproved(boolean approved) { isApproved = approved; }
 }

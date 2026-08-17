@@ -32,11 +32,11 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
 
     private void exposeDirectory(String dirName, ResourceHandlerRegistry registry) {
-        Path uploadDir = Paths.get(dirName);
+        Path uploadDir = Paths.get(System.getProperty("user.dir"), dirName);
         if (dirName.startsWith("../")) {
             dirName = dirName.replace("../", "");
         }
         registry.addResourceHandler("/api/" + dirName + "/**")
-                .addResourceLocations(uploadDir.toUri().toString() + "/");
+                .addResourceLocations("file:" + uploadDir.toAbsolutePath().toString() + "/");
     }
 }

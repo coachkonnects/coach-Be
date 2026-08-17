@@ -16,7 +16,6 @@ public class DemandController {
     @Autowired
     private DemandRepository demandRepository;
 
-    // Public endpoint to submit a new demand
     @PostMapping("/public/demands")
     public ResponseEntity<?> submitDemand(@RequestBody Map<String, String> payload) {
         String skillName = payload.get("skillName");
@@ -33,15 +32,15 @@ public class DemandController {
         demand.setSkillName(skillName.trim());
         demand.setLocation(location.trim());
         demand.setEmail(email.trim());
+        demand.setApproved(false);
         demandRepository.save(demand);
 
         return ResponseEntity.ok(Map.of("message", "Request submitted successfully."));
     }
 
-    // Public endpoint to get demands (HIDES EMAIL)
     @GetMapping("/public/demands")
     public ResponseEntity<?> getPublicDemands() {
-        List<Map<String, Object>> publicDemands = demandRepository.findAllByOrderByCreatedAtDesc()
+        List<Map<String, Object>> publicDemands = demandRepository.findByIsApprovedTrueOrderByCreatedAtDesc()
             .stream()
             .map(d -> Map.<String, Object>of(
                 "id", d.getId(),
@@ -53,10 +52,30 @@ public class DemandController {
         return ResponseEntity.ok(publicDemands);
     }
 
-    // Admin endpoint to get full demands
     @GetMapping("/admin/demands")
     public ResponseEntity<List<Demand>> getAdminDemands() {
-        // Normally secured by Spring Security role/token check, but mapping handles logic for MVP
         return ResponseEntity.ok(demandRepository.findAllByOrderByCreatedAtDesc());
+    }
+
+    @PutMapping("/admin/demands/{id}/approve")
+    public ResponseEntity<?> approveDemand(@PathVariable Long id) {
+        return demandRepository.findById(id).map(demand -> {
+            demand.setApproved(true);
+            demandRepository.save(demand);
+            return ResponseEntity.ok(demand);
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/admin/demands/{id}/edit")
+    public ResponseEntity<?> editDemand(@PathVariable Long id, @RequestBody Map<String, String> payload) {
+        String newSkillName = payload.get("skillName");
+        if (newSkillName == null || newSkillName.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Skill Name is required");
+        }
+        return demandRepository.findById(id).map(demand -> {
+            demand.setSkillName(newSkillName.trim());
+            demandRepository.save(demand);
+            return ResponseEntity.ok(demand);
+        }).orElse(ResponseEntity.notFound().build());
     }
 }
