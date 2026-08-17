@@ -128,7 +128,14 @@ public class AuthController {
                 }
             }
             
-            String token = jwtUtil.generateToken(user.getEmail(), user.getRole());
+            String roleToIssue = user.getRole();
+            if ("ADMIN".equalsIgnoreCase(intendedRole)) {
+                java.util.List<String> allowedAdmins = java.util.Arrays.asList("kavita.ganatra2@gmail.com", "sameer.rcssoft@gmail.com");
+                if (allowedAdmins.contains(email)) {
+                    roleToIssue = "ADMIN";
+                }
+            }
+            String token = jwtUtil.generateToken(user.getEmail(), roleToIssue);
 
             return ResponseEntity.ok(Map.of(
                     "message", "Login successful",
