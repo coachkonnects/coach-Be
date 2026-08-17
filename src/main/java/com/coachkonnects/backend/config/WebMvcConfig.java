@@ -32,7 +32,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
 
     private void exposeDirectory(String dirName, ResourceHandlerRegistry registry) {
-        Path uploadDir = Paths.get(System.getProperty("user.dir"), dirName);
+        Path uploadDir = Paths.get(System.getProperty("user.home"), "coachkonnects_" + dirName);
         if (dirName.startsWith("../")) {
             dirName = dirName.replace("../", "");
         }
