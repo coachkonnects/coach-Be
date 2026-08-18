@@ -13,6 +13,9 @@ import java.util.Map;
 
 import com.coachkonnects.backend.util.JwtUtil;
 import java.util.concurrent.ConcurrentHashMap;
+import com.coachkonnects.backend.repository.UserRepository;
+import com.coachkonnects.backend.repository.StudentProfileRepository;
+import com.coachkonnects.backend.repository.CoachProfileRepository;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -26,6 +29,15 @@ public class AuthController {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private StudentProfileRepository studentProfileRepository;
+
+    @Autowired
+    private CoachProfileRepository coachProfileRepository;
 
     // Simple in-memory rate limiting: IP -> number of requests
     private final ConcurrentHashMap<String, Integer> otpRequests = new ConcurrentHashMap<>();
@@ -53,6 +65,17 @@ public class AuthController {
 
             String email = body.get("email").trim().toLowerCase();
             String intendedRole = body.get("intendedRole");
+            
+            String isRegister = body.get("isRegister");
+            if (isRegister != null && Boolean.parseBoolean(isRegister)) {
+                java.util.Optional<User> existingUser = userRepository.findByEmail(email);
+                if (existingUser.isPresent()) {
+                    if (coachProfileRepository.findByUser(existingUser.get()).isPresent() || 
+                        studentProfileRepository.findByUser(existingUser.get()).isPresent()) {
+                        return ResponseEntity.badRequest().body(Map.of("error", "This email is already registered. Please log in instead."));
+                    }
+                }
+            }
 
             if ("ADMIN".equalsIgnoreCase(intendedRole)) {
                 java.util.List<String> allowedAdmins = java.util.Arrays.asList("kavita.ganatra1@gmail.com", "kavita.ganatra2@gmail.com", "sameer.rcssoft@gmail.com");
