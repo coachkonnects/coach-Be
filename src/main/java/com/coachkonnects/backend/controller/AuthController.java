@@ -131,7 +131,7 @@ public class AuthController {
             
             String roleToIssue = user.getRole();
             if ("ADMIN".equalsIgnoreCase(intendedRole)) {
-                java.util.List<String> allowedAdmins = java.util.Arrays.asList("kavita.ganatra2@gmail.com", "sameer.rcssoft@gmail.com");
+                java.util.List<String> allowedAdmins = java.util.Arrays.asList("kavita.ganatra1@gmail.com", "kavita.ganatra2@gmail.com", "sameer.rcssoft@gmail.com");
                 if (allowedAdmins.contains(email)) {
                     roleToIssue = "ADMIN";
                 }
