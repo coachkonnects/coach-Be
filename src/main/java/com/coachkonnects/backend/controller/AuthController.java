@@ -43,7 +43,8 @@ public class AuthController {
             }
             
             int attempts = otpRequests.getOrDefault(ip, 0);
-            if (attempts >= 5) {
+            // Bypassed for testing phase
+            if (attempts >= 5000) {
                 return ResponseEntity.status(429).body(Map.of("error", "Too many requests. Please try again later."));
             }
             
@@ -54,7 +55,7 @@ public class AuthController {
             String intendedRole = body.get("intendedRole");
 
             if ("ADMIN".equalsIgnoreCase(intendedRole)) {
-                java.util.List<String> allowedAdmins = java.util.Arrays.asList("kavita.ganatra2@gmail.com", "sameer.rcssoft@gmail.com");
+                java.util.List<String> allowedAdmins = java.util.Arrays.asList("kavita.ganatra1@gmail.com", "kavita.ganatra2@gmail.com", "sameer.rcssoft@gmail.com");
                 if (!allowedAdmins.contains(email)) {
                     try {
                         org.springframework.mail.SimpleMailMessage alert = new org.springframework.mail.SimpleMailMessage();
@@ -84,7 +85,7 @@ public class AuthController {
             String intendedRole = body.get("intendedRole");
             
             if ("ADMIN".equalsIgnoreCase(intendedRole)) {
-                java.util.List<String> allowedAdmins = java.util.Arrays.asList("kavita.ganatra2@gmail.com", "sameer.rcssoft@gmail.com");
+                java.util.List<String> allowedAdmins = java.util.Arrays.asList("kavita.ganatra1@gmail.com", "kavita.ganatra2@gmail.com", "sameer.rcssoft@gmail.com");
                 if (!allowedAdmins.contains(email)) {
                     try {
                         org.springframework.mail.SimpleMailMessage alert = new org.springframework.mail.SimpleMailMessage();
@@ -101,7 +102,7 @@ public class AuthController {
             User user = authService.verifyOtp(email, code);
 
             if ("ADMIN".equals(user.getRole())) {
-                java.util.List<String> allowedAdmins = java.util.Arrays.asList("kavita.ganatra2@gmail.com", "sameer.rcssoft@gmail.com");
+                java.util.List<String> allowedAdmins = java.util.Arrays.asList("kavita.ganatra1@gmail.com", "kavita.ganatra2@gmail.com", "sameer.rcssoft@gmail.com");
                 if (!allowedAdmins.contains(email)) {
                     try {
                         org.springframework.mail.SimpleMailMessage alert = new org.springframework.mail.SimpleMailMessage();
