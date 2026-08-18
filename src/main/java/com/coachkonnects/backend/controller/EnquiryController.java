@@ -156,6 +156,7 @@ public class EnquiryController {
             enquiry.setStatus(status);
             enquiryRepository.save(enquiry);
 
+            String responseMessage = "Status updated successfully!";
             if (status == EnquiryStatus.APPROVED) {
                 try {
                     SimpleMailMessage message = new SimpleMailMessage();
@@ -169,10 +170,11 @@ public class EnquiryController {
                     mailSender.send(message);
                 } catch (Exception e) {
                     System.err.println("Failed to send approval email: " + e.getMessage());
+                    responseMessage = "Status updated, but failed to send email to student: " + e.getMessage();
                 }
             }
 
-            return ResponseEntity.ok(Map.of("message", "Status updated successfully!"));
+            return ResponseEntity.ok(Map.of("message", responseMessage));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
