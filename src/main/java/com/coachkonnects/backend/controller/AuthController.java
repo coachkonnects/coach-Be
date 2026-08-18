@@ -39,6 +39,9 @@ public class AuthController {
     @Autowired
     private CoachProfileRepository coachProfileRepository;
 
+    @Autowired
+    private com.coachkonnects.backend.repository.BlockedEmailRepository blockedEmailRepository;
+
     // Simple in-memory rate limiting: IP -> number of requests
     private final ConcurrentHashMap<String, Integer> otpRequests = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Long> otpTimestamps = new ConcurrentHashMap<>();
@@ -64,13 +67,18 @@ public class AuthController {
             otpTimestamps.put(ip, now);
 
             String email = body.get("email").trim().toLowerCase();
+            if (blockedEmailRepository.existsByEmailIgnoreCase(email)) {
+                return ResponseEntity.status(403).body(Map.of("error", "This email address has been permanently banned from the platform."));
+            }
+            
             String intendedRole = body.get("intendedRole");
             
             String isRegister = body.get("isRegister");
             if (isRegister != null && Boolean.parseBoolean(isRegister)) {
                 java.util.Optional<User> existingUser = userRepository.findByEmail(email);
                 if (existingUser.isPresent()) {
-                    if (coachProfileRepository.findByUser(existingUser.get()).isPresent() || 
+                    if ("ADMIN".equalsIgnoreCase(existingUser.get().getRole()) ||
+                        coachProfileRepository.findByUser(existingUser.get()).isPresent() || 
                         studentProfileRepository.findByUser(existingUser.get()).isPresent()) {
                         return ResponseEntity.badRequest().body(Map.of("error", "This email is already registered. Please log in instead."));
                     }

@@ -84,4 +84,12 @@ public class DemandController {
             return ResponseEntity.ok(demand);
         }).orElse(ResponseEntity.notFound().build());
     }
+
+    @DeleteMapping("/admin/demands/{id}")
+    public ResponseEntity<?> deleteDemand(@PathVariable Long id) {
+        return demandRepository.findById(id).map(demand -> {
+            demandRepository.delete(demand);
+            return ResponseEntity.ok(Map.of("message", "Demand deleted successfully."));
+        }).orElse(ResponseEntity.notFound().build());
+    }
 }

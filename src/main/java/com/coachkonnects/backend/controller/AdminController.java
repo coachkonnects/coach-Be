@@ -175,9 +175,9 @@ public class AdminController {
     }
 
     @DeleteMapping("/coaches/{id}")
-    public ResponseEntity<?> deleteCoach(@PathVariable Long id) {
+    public ResponseEntity<?> deleteCoach(@PathVariable Long id, @RequestParam(defaultValue = "false") boolean ban) {
         try {
-            adminService.deleteCoachProfile(id);
+            adminService.deleteCoachProfile(id, ban);
             return ResponseEntity.ok("Coach profile and account deleted successfully.");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -226,9 +226,9 @@ public class AdminController {
     }
 
     @DeleteMapping("/students/{id}")
-    public ResponseEntity<?> deleteStudent(@PathVariable Long id) {
+    public ResponseEntity<?> deleteStudent(@PathVariable Long id, @RequestParam(defaultValue = "false") boolean ban) {
         try {
-            adminService.deleteStudentProfile(id);
+            adminService.deleteStudentProfile(id, ban);
             return ResponseEntity.ok(Map.of("message", "Student profile deleted."));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));

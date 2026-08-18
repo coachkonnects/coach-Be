@@ -31,6 +31,9 @@ public class AdminService {
     private EnquiryRepository enquiryRepository;
 
     @Autowired
+    private BlockedEmailRepository blockedEmailRepository;
+
+    @Autowired
     private JavaMailSender mailSender;
 
     private static final int STUDENT_MAX_STRIKES = 3;
@@ -157,7 +160,8 @@ public class AdminService {
             String htmlContent = "<h1>Congratulations!</h1>" +
                     "<p>Your Coach Profile has been approved and is now LIVE on CoachKonnects.</p>" +
                     "<p>Students can now view your profile, register for your classes, and send you enquiries.</p>" +
-                    "<p>Keep your availability and classes updated for the best experience.</p>";
+                    "<p>Keep your availability and classes updated for the best experience.</p>" +
+                    "<p><a href='https://coachkonnects.com/login' style='display:inline-block;padding:10px 20px;background-color:#F97316;color:white;text-decoration:none;border-radius:5px;'>Log In to Your Dashboard</a></p>";
 
             helper.setText(htmlContent, true);
             mailSender.send(message);
@@ -217,7 +221,8 @@ public class AdminService {
 
             String htmlContent = "<h1>Welcome to CoachKonnects!</h1>" +
                     "<p>Your Student Profile has been approved by our team.</p>" +
-                    "<p>You can now browse coach profiles and send enquiries to start learning.</p>";
+                    "<p>You can now browse coach profiles and send enquiries to start learning.</p>" +
+                    "<p><a href='https://coachkonnects.com/login' style='display:inline-block;padding:10px 20px;background-color:#F97316;color:white;text-decoration:none;border-radius:5px;'>Log In to Your Dashboard</a></p>";
 
             helper.setText(htmlContent, true);
             mailSender.send(message);
@@ -253,11 +258,18 @@ public class AdminService {
         }
     }
 
-    public void deleteStudentProfile(Long studentId) {
+    public void deleteStudentProfile(Long studentId, boolean banEmail) {
         StudentProfile student = studentRepository.findById(studentId)
                 .orElseThrow(() -> new RuntimeException("Student not found"));
         
         User user = student.getUser();
+
+        if (banEmail && user.getEmail() != null) {
+            if (!blockedEmailRepository.existsByEmailIgnoreCase(user.getEmail())) {
+                blockedEmailRepository.save(new BlockedEmail(user.getEmail().toLowerCase()));
+            }
+        }
+
         List<AdminFlag> flags = flagRepository.findByUserAndIsResolvedFalse(user);
         flagRepository.deleteAll(flags);
         
@@ -265,11 +277,17 @@ public class AdminService {
         userRepository.delete(user);
     }
 
-    public void deleteCoachProfile(Long coachId) {
+    public void deleteCoachProfile(Long coachId, boolean banEmail) {
         CoachProfile coach = coachRepository.findById(coachId)
                 .orElseThrow(() -> new RuntimeException("Coach not found"));
 
         User user = coach.getUser();
+
+        if (banEmail && user.getEmail() != null) {
+            if (!blockedEmailRepository.existsByEmailIgnoreCase(user.getEmail())) {
+                blockedEmailRepository.save(new BlockedEmail(user.getEmail().toLowerCase()));
+            }
+        }
 
         List<AdminFlag> flags = flagRepository.findByUserAndIsResolvedFalse(user);
         flagRepository.deleteAll(flags);

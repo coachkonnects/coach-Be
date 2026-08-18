@@ -41,7 +41,7 @@ public class EnquiryController {
     @Autowired
     private JavaMailSender mailSender;
 
-    @Value("${app.frontend.url:http://localhost:5173}")
+    @Value("${app.frontend.url:https://coachkonnects.com}")
     private String frontendUrl;
     @PostMapping("/send")
     public ResponseEntity<?> sendEnquiry(@RequestBody Map<String, String> payload) {

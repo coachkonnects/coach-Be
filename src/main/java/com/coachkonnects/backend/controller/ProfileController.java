@@ -247,8 +247,10 @@ public class ProfileController {
 
             if (req.fullName != null)
                 profile.setFullName(req.fullName);
-            if (req.dob != null)
+            if (req.dob != null && !req.dob.isEmpty()) {
+                validateDateOfBirth(req.dob);
                 profile.setDateOfBirth(req.dob);
+            }
             if (req.gender != null)
                 profile.setGender(req.gender);
             if (req.district != null)
@@ -276,6 +278,35 @@ public class ProfileController {
             if (req.parentEmail != null)
                 profile.setParentEmail(req.parentEmail);
 
+            boolean isUnder18 = false;
+            try {
+                if (profile.getDateOfBirth() != null && !profile.getDateOfBirth().isEmpty()) {
+                    int birthYear = 0;
+                    String dob = profile.getDateOfBirth();
+                    if (dob.contains("/")) {
+                        birthYear = Integer.parseInt(dob.split("/")[2]);
+                    } else if (dob.contains("-")) {
+                        String firstPart = dob.split("-")[0];
+                        birthYear = firstPart.length() == 4 ? Integer.parseInt(firstPart) : Integer.parseInt(dob.split("-")[2]);
+                    }
+                    int currentYear = java.time.LocalDateTime.now().getYear();
+                    if (birthYear > 0 && (currentYear - birthYear < 18)) {
+                        isUnder18 = true;
+                    }
+                }
+            } catch (Exception e) {}
+
+            if (isUnder18 && profile.getParentEmail() != null && !profile.getParentEmail().isEmpty()) {
+                // Check if they need a new token (e.g. email changed or not verified yet)
+                if (profile.getParentConsentVerified() == null || !profile.getParentConsentVerified()) {
+                    String token = java.util.UUID.randomUUID().toString();
+                    profile.setConsentToken(token);
+                    sendParentalConsentEmail(profile.getParentEmail(), profile.getFullName(), token);
+                }
+            } else {
+                profile.setParentConsentVerified(true);
+            }
+
             profile.setStatus(ProfileStatus.APPROVED);
             profile.setRejectReason(null);
 
@@ -292,21 +323,19 @@ public class ProfileController {
             String ip = request.getRemoteAddr();
             checkIpLimit(ip);
             checkSpamPolicy(req.fullName + " " + req.district + " " + req.state);
+            
+            if (req.dob != null && !req.dob.isEmpty()) {
+                validateDateOfBirth(req.dob);
+            }
 
             User user = userRepository.findByEmail(req.email)
                     .orElseThrow(() -> new RuntimeException("User not found. Please verify email first."));
 
-            if (coachProfileRepository.findByUser(user).isPresent()
+            if ("ADMIN".equalsIgnoreCase(user.getRole()) ||
+                coachProfileRepository.findByUser(user).isPresent()
                     || studentProfileRepository.findByUser(user).isPresent()) {
                 throw new RuntimeException(
                         "This email is already registered with a profile. Please use a different email.");
-            }
-
-            if (req.mobile != null && !req.mobile.trim().isEmpty()) {
-                java.util.Optional<User> existingMobile = userRepository.findByPhoneNumber(req.mobile.trim());
-                if (existingMobile.isPresent() && !existingMobile.get().getId().equals(user.getId())) {
-                    throw new RuntimeException("This phone number is already registered. Please use a different phone number.");
-                }
             }
 
             if (req.mobile != null && !req.mobile.trim().isEmpty()) {
@@ -418,11 +447,16 @@ public class ProfileController {
             String ip = request.getRemoteAddr();
             checkIpLimit(ip);
             checkSpamPolicy(req.fullName + " " + req.district + " " + req.state);
+            
+            if (req.dob != null && !req.dob.isEmpty()) {
+                validateDateOfBirth(req.dob);
+            }
 
             User user = userRepository.findByEmail(req.email)
                     .orElseThrow(() -> new RuntimeException("User not found. Please verify email first."));
 
-            if (coachProfileRepository.findByUser(user).isPresent()
+            if ("ADMIN".equalsIgnoreCase(user.getRole()) ||
+                coachProfileRepository.findByUser(user).isPresent()
                     || studentProfileRepository.findByUser(user).isPresent()) {
                 throw new RuntimeException(
                         "This email is already registered with a profile. Please use a different email.");
@@ -461,15 +495,21 @@ public class ProfileController {
             boolean isUnder18 = false;
             try {
                 if (req.dob != null && !req.dob.isEmpty()) {
-                    int birthYear = Integer.parseInt(req.dob.split("-")[0]);
-                    int currentYear = LocalDateTime.now().getYear();
-                    if (currentYear - birthYear < 18) {
+                    int birthYear = 0;
+                    if (req.dob.contains("/")) {
+                        birthYear = Integer.parseInt(req.dob.split("/")[2]);
+                    } else if (req.dob.contains("-")) {
+                        String firstPart = req.dob.split("-")[0];
+                        birthYear = firstPart.length() == 4 ? Integer.parseInt(firstPart) : Integer.parseInt(req.dob.split("-")[2]);
+                    }
+                    int currentYear = java.time.LocalDateTime.now().getYear();
+                    if (birthYear > 0 && (currentYear - birthYear < 18)) {
                         isUnder18 = true;
                     }
                 }
             } catch (Exception e) {}
 
-            if (isUnder18 && req.parentEmail != null && !req.parentEmail.isEmpty()) {
+            if (isUnder18 && req.parentEmail != null && !req.parentEmail.isEmpty() && (profile.getParentConsentVerified() == null || !profile.getParentConsentVerified())) {
                 String token = UUID.randomUUID().toString();
                 profile.setConsentToken(token);
                 profile.setParentConsentVerified(false);
@@ -501,7 +541,7 @@ public class ProfileController {
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             helper.setTo(email);
             helper.setSubject("Parental Consent Request - CoachKonnects");
-            String url = "http://localhost:8080/api/profile/verify-consent/" + token; // Backend API endpoint
+            String url = "https://coachkonnects.com/api/profile/verify-consent/" + token; // Backend API endpoint
             helper.setText("<h1>Parental Consent</h1><p>Please click the link below to verify your consent for " + studentName + ":</p><a href='" + url + "'>Verify Consent</a>", true);
             mailSender.send(message);
         } catch (Exception e) {
@@ -539,6 +579,48 @@ public class ProfileController {
                 throw new RuntimeException(
                         "SPAM_DETECTED: Registration blocked due to policy violation (Spam/Educational Subjects).");
             }
+        }
+    }
+
+    private void validateDateOfBirth(String dobString) {
+        if (dobString == null || dobString.trim().isEmpty()) {
+            throw new RuntimeException("Date of Birth is required.");
+        }
+        try {
+            int year = 0, month = 0, day = 0;
+            if (dobString.contains("/")) {
+                String[] parts = dobString.split("/");
+                day = Integer.parseInt(parts[0]);
+                month = Integer.parseInt(parts[1]);
+                year = Integer.parseInt(parts[2]);
+            } else if (dobString.contains("-")) {
+                String[] parts = dobString.split("-");
+                if (parts[0].length() == 4) {
+                    year = Integer.parseInt(parts[0]);
+                    month = Integer.parseInt(parts[1]);
+                    day = Integer.parseInt(parts[2]);
+                } else {
+                    day = Integer.parseInt(parts[0]);
+                    month = Integer.parseInt(parts[1]);
+                    year = Integer.parseInt(parts[2]);
+                }
+            } else {
+                throw new RuntimeException("Invalid Date of Birth format.");
+            }
+            
+            java.time.LocalDate dob = java.time.LocalDate.of(year, month, day);
+            java.time.LocalDate today = java.time.LocalDate.now();
+            
+            if (dob.isAfter(today)) {
+                throw new RuntimeException("Date of Birth cannot be in the future.");
+            }
+            
+            java.time.LocalDate sixMonthsAgo = today.minusMonths(6);
+            if (dob.isAfter(sixMonthsAgo)) {
+                throw new RuntimeException("User must be at least 6 months old.");
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Invalid Date of Birth.");
         }
     }
 }
