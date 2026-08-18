@@ -22,9 +22,6 @@ public class AuthInterceptor implements HandlerInterceptor {
 
         String uri = request.getRequestURI();
         if ("GET".equalsIgnoreCase(request.getMethod())) {
-            if (uri.equals("/api/classes") || uri.startsWith("/api/classes/")) {
-                return true;
-            }
             if (uri.startsWith("/api/profile/") && !uri.endsWith("/me")) {
                 return true;
             }
