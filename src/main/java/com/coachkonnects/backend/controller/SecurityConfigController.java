@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 @RestController
@@ -31,26 +32,36 @@ public class SecurityConfigController {
 
     @PostMapping("/admin/security/blocked-words")
     public ResponseEntity<?> addBlockedWord(@RequestBody Map<String, String> body) {
-        String word = body.get("word");
+        String wordStr = body.get("word");
         String category = body.getOrDefault("category", "CUSTOM");
         
-        if (word == null || word.trim().isEmpty()) {
+        if (wordStr == null || wordStr.trim().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Word cannot be empty"));
         }
-        word = word.trim();
         
-        // Find if exists
+        String[] words = wordStr.split(",");
         List<BlockedWord> allWords = blockedWordRepository.findAll();
-        for (BlockedWord bw : allWords) {
-            if (bw.getWord().equals(word)) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Word already exists"));
+        List<String> existingWords = allWords.stream().map(BlockedWord::getWord).collect(Collectors.toList());
+        
+        List<BlockedWord> addedWords = new ArrayList<>();
+        
+        for (String w : words) {
+            String cleanWord = w.trim();
+            if (cleanWord.isEmpty() || existingWords.contains(cleanWord)) {
+                continue;
             }
+            BlockedWord bw = new BlockedWord(cleanWord, category);
+            blockedWordRepository.save(bw);
+            addedWords.add(bw);
+            existingWords.add(cleanWord);
         }
         
-        BlockedWord bw = new BlockedWord(word, category);
-        blockedWordRepository.save(bw);
+        if (addedWords.isEmpty()) {
+             return ResponseEntity.badRequest().body(Map.of("error", "All words provided already exist or were invalid"));
+        }
+        
         moderationService.reloadCache();
-        return ResponseEntity.ok(bw);
+        return ResponseEntity.ok(Map.of("message", addedWords.size() + " words added successfully"));
     }
 
     @DeleteMapping("/admin/security/blocked-words/{id}")
