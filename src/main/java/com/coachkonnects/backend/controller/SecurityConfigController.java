@@ -2,6 +2,7 @@ package com.coachkonnects.backend.controller;
 
 import com.coachkonnects.backend.model.BlockedWord;
 import com.coachkonnects.backend.repository.BlockedWordRepository;
+import com.coachkonnects.backend.service.ModerationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,9 @@ public class SecurityConfigController {
 
     @Autowired
     private BlockedWordRepository blockedWordRepository;
+
+    @Autowired
+    private ModerationService moderationService;
 
     @GetMapping("/config/blocked-words")
     public ResponseEntity<List<String>> getBlockedWords() {
@@ -45,6 +49,7 @@ public class SecurityConfigController {
         
         BlockedWord bw = new BlockedWord(word, category);
         blockedWordRepository.save(bw);
+        moderationService.reloadCache();
         return ResponseEntity.ok(bw);
     }
 
@@ -54,6 +59,7 @@ public class SecurityConfigController {
             return ResponseEntity.notFound().build();
         }
         blockedWordRepository.deleteById(id);
+        moderationService.reloadCache();
         return ResponseEntity.ok().build();
     }
     
