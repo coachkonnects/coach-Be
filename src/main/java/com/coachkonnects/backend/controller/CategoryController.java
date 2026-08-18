@@ -49,6 +49,20 @@ public class CategoryController {
         return ResponseEntity.ok(cat);
     }
 
+    @PostMapping("/admin/categories")
+    public ResponseEntity<?> addAdminCategory(@RequestBody CategoryRequest req) {
+        if (req.name == null || req.name.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body("Name is required");
+        }
+        Category cat = new Category(req.name.trim());
+        if (req.expertises != null) {
+            cat.setExpertises(req.expertises.trim());
+        }
+        cat.setApproved(true);
+        categoryRepository.save(cat);
+        return ResponseEntity.ok(cat);
+    }
+
     @DeleteMapping("/categories/{id}")
     public ResponseEntity<?> deleteCategory(@PathVariable Long id) {
         if (!categoryRepository.existsById(id)) {
