@@ -68,6 +68,7 @@ public class ModerationService {
         String lowerContent = content.toLowerCase();
         
         for (BlockedWord bw : cachedBlockedWords) {
+            if (bw.getWord().equalsIgnoreCase("board")) continue;
             String target = bw.getWord().toLowerCase();
             // Simple exact substring match
             if (lowerContent.contains(target)) {
@@ -75,7 +76,7 @@ public class ModerationService {
                 // e.g. "couple" vs "decoupled"
                 String regex = "\\b" + Pattern.quote(target) + "\\b";
                 if (Pattern.compile(regex).matcher(lowerContent).find()) {
-                    throw new RuntimeException("CONTENT_BLOCKED: Your description contains restricted language (" + bw.getCategory() + " policy violation).");
+                    throw new RuntimeException("CONTENT_BLOCKED: Your description contains restricted language: '" + bw.getWord() + "' (" + bw.getCategory() + " policy violation). Please remove this word.");
                 }
             }
         }
