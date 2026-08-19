@@ -475,7 +475,7 @@ public class ProfileController {
             checkIpLimit(ip);
             checkSpamPolicy(req.fullName + " " + req.district + " " + req.state);
 
-            if (req.parentEmail != null && req.parentEmail.equalsIgnoreCase(user.getEmail())) {
+            if (req.parentEmail != null && req.email != null && req.parentEmail.equalsIgnoreCase(req.email)) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Parent email cannot be the same as your student account email."));
             }
 
