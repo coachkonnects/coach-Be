@@ -10,4 +10,7 @@ import java.util.Optional;
 public interface BlockedEmailRepository extends JpaRepository<BlockedEmail, Long> {
     Optional<BlockedEmail> findByEmail(String email);
     boolean existsByEmailIgnoreCase(String email);
+    
+    @org.springframework.transaction.annotation.Transactional
+    void deleteByEmailIgnoreCase(String email);
 }

@@ -266,12 +266,16 @@ public class AdminService {
 
         if (banEmail && user.getEmail() != null) {
             if (!blockedEmailRepository.existsByEmailIgnoreCase(user.getEmail())) {
-                blockedEmailRepository.save(new BlockedEmail(user.getEmail().toLowerCase()));
+                String fullName = student.getFullName();
+                blockedEmailRepository.save(new BlockedEmail(user.getEmail().toLowerCase(), fullName));
             }
         }
 
         List<AdminFlag> flags = flagRepository.findByUserAndIsResolvedFalse(user);
         flagRepository.deleteAll(flags);
+        
+        List<com.coachkonnects.backend.model.Enquiry> enquiries = enquiryRepository.findByStudent(student);
+        enquiryRepository.deleteAll(enquiries);
         
         studentRepository.delete(student);
         userRepository.delete(user);
@@ -285,12 +289,16 @@ public class AdminService {
 
         if (banEmail && user.getEmail() != null) {
             if (!blockedEmailRepository.existsByEmailIgnoreCase(user.getEmail())) {
-                blockedEmailRepository.save(new BlockedEmail(user.getEmail().toLowerCase()));
+                String fullName = coach.getFullName();
+                blockedEmailRepository.save(new BlockedEmail(user.getEmail().toLowerCase(), fullName));
             }
         }
 
         List<AdminFlag> flags = flagRepository.findByUserAndIsResolvedFalse(user);
         flagRepository.deleteAll(flags);
+
+        List<com.coachkonnects.backend.model.Enquiry> enquiries = enquiryRepository.findByCoach(coach);
+        enquiryRepository.deleteAll(enquiries);
 
         coachRepository.delete(coach);
         userRepository.delete(user);

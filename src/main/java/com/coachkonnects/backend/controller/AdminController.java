@@ -40,6 +40,24 @@ public class AdminController {
     @Autowired
     private CoachClassRepository classRepository;
 
+    @Autowired
+    private com.coachkonnects.backend.repository.BlockedEmailRepository blockedEmailRepository;
+
+    @GetMapping("/banned-users")
+    public ResponseEntity<?> getBannedUsers() {
+        return ResponseEntity.ok(blockedEmailRepository.findAll());
+    }
+
+    @DeleteMapping("/banned-users/{email}")
+    public ResponseEntity<?> unbanUser(@PathVariable String email) {
+        try {
+            blockedEmailRepository.deleteByEmailIgnoreCase(email);
+            return ResponseEntity.ok(Map.of("message", "User unbanned successfully."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
     @GetMapping("/classes")
     public ResponseEntity<?> getAllClasses() {
         return ResponseEntity.ok(classRepository.findAll().stream().map(c -> {

@@ -214,7 +214,8 @@ public class ProfileController {
     }
 
     @GetMapping("/student/me")
-    public ResponseEntity<?> getMyStudentProfile(HttpServletRequest request, @RequestParam(required = false) String email) {
+    public ResponseEntity<?> getMyStudentProfile(HttpServletRequest request,
+            @RequestParam(required = false) String email) {
         try {
             if (email == null || email.isEmpty()) {
                 email = (String) request.getAttribute("userEmail");
@@ -247,6 +248,10 @@ public class ProfileController {
 
             if (req.fullName != null)
                 profile.setFullName(req.fullName);
+            if (req.parentEmail != null && req.parentEmail.equalsIgnoreCase(user.getEmail())) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Parent email cannot be the same as your student account email."));
+            }
+
             if (req.dob != null && !req.dob.isEmpty()) {
                 validateDateOfBirth(req.dob);
                 profile.setDateOfBirth(req.dob);
@@ -287,28 +292,36 @@ public class ProfileController {
                         birthYear = Integer.parseInt(dob.split("/")[2]);
                     } else if (dob.contains("-")) {
                         String firstPart = dob.split("-")[0];
-                        birthYear = firstPart.length() == 4 ? Integer.parseInt(firstPart) : Integer.parseInt(dob.split("-")[2]);
+                        birthYear = firstPart.length() == 4 ? Integer.parseInt(firstPart)
+                                : Integer.parseInt(dob.split("-")[2]);
                     }
                     int currentYear = java.time.LocalDateTime.now().getYear();
                     if (birthYear > 0 && (currentYear - birthYear < 18)) {
                         isUnder18 = true;
                     }
                 }
-            } catch (Exception e) {}
+            } catch (Exception e) {
+            }
 
             if (isUnder18 && profile.getParentEmail() != null && !profile.getParentEmail().isEmpty()) {
                 // Check if they need a new token (e.g. email changed or not verified yet)
                 if (profile.getParentConsentVerified() == null || !profile.getParentConsentVerified()) {
-                    String token = java.util.UUID.randomUUID().toString();
+                    String token = String.format("%06d", new java.util.Random().nextInt(1000000));
                     profile.setConsentToken(token);
                     sendParentalConsentEmail(profile.getParentEmail(), profile.getFullName(), token);
+                    profile.setParentConsentVerified(false);
                 }
             } else {
                 profile.setParentConsentVerified(true);
             }
 
-            profile.setStatus(ProfileStatus.APPROVED);
-            profile.setRejectReason(null);
+            if (isUnder18 && (profile.getParentConsentVerified() == null || !profile.getParentConsentVerified())) {
+                profile.setStatus(ProfileStatus.PENDING_APPROVAL);
+                profile.setRejectReason("Pending Parental Consent");
+            } else {
+                profile.setStatus(ProfileStatus.APPROVED);
+                profile.setRejectReason(null);
+            }
 
             StudentProfile saved = studentProfileRepository.save(profile);
             return ResponseEntity.ok(saved);
@@ -323,7 +336,11 @@ public class ProfileController {
             String ip = request.getRemoteAddr();
             checkIpLimit(ip);
             checkSpamPolicy(req.fullName + " " + req.district + " " + req.state);
-            
+
+            if (req.parentEmail != null && req.parentEmail.equalsIgnoreCase(user.getEmail())) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Parent email cannot be the same as your student account email."));
+            }
+
             if (req.dob != null && !req.dob.isEmpty()) {
                 validateDateOfBirth(req.dob);
             }
@@ -332,7 +349,7 @@ public class ProfileController {
                     .orElseThrow(() -> new RuntimeException("User not found. Please verify email first."));
 
             if ("ADMIN".equalsIgnoreCase(user.getRole()) ||
-                coachProfileRepository.findByUser(user).isPresent()
+                    coachProfileRepository.findByUser(user).isPresent()
                     || studentProfileRepository.findByUser(user).isPresent()) {
                 throw new RuntimeException(
                         "This email is already registered with a profile. Please use a different email.");
@@ -341,14 +358,17 @@ public class ProfileController {
             if (req.mobile != null && !req.mobile.trim().isEmpty()) {
                 java.util.Optional<User> existingMobile = userRepository.findByPhoneNumber(req.mobile.trim());
                 if (existingMobile.isPresent() && !existingMobile.get().getId().equals(user.getId())) {
-                    throw new RuntimeException("This phone number is already registered. Please use a different phone number.");
+                    throw new RuntimeException(
+                            "This phone number is already registered. Please use a different phone number.");
                 }
             }
 
             if (req.socialLinks != null && !req.socialLinks.trim().isEmpty()) {
-                java.util.Optional<com.coachkonnects.backend.model.CoachProfile> existingCoach = coachProfileRepository.findBySocialLinks(req.socialLinks.trim());
+                java.util.Optional<com.coachkonnects.backend.model.CoachProfile> existingCoach = coachProfileRepository
+                        .findBySocialLinks(req.socialLinks.trim());
                 if (existingCoach.isPresent() && !existingCoach.get().getUser().getId().equals(user.getId())) {
-                    throw new RuntimeException("This Instagram handle is already registered. Please use a different one.");
+                    throw new RuntimeException(
+                            "This Instagram handle is already registered. Please use a different one.");
                 }
             }
 
@@ -356,7 +376,6 @@ public class ProfileController {
                 user.setPhoneNumber(req.mobile);
                 userRepository.save(user);
             }
-
 
             if (req.category != null && !req.category.isEmpty()) {
                 if (categoryRepository.findByName(req.category).isEmpty()) {
@@ -391,9 +410,16 @@ public class ProfileController {
             profile.setIntroVideoUrl(req.introVideoUrl);
             profile.setSocialLinks(req.socialLinks);
 
-            String cleanName = req.fullName != null ? req.fullName.toLowerCase().replaceAll("[^a-z0-9]", "-").replaceAll("-+", "-").replaceAll("-$", "") : "coach";
-            String cleanExpertise = req.expertise != null ? req.expertise.toLowerCase().replaceAll("[^a-z0-9]", "-").replaceAll("-+", "-").replaceAll("-$", "") : "";
-            String cleanLocation = req.district != null ? req.district.toLowerCase().replaceAll("[^a-z0-9]", "-").replaceAll("-+", "-").replaceAll("-$", "") : "";
+            String cleanName = req.fullName != null
+                    ? req.fullName.toLowerCase().replaceAll("[^a-z0-9]", "-").replaceAll("-+", "-").replaceAll("-$", "")
+                    : "coach";
+            String cleanExpertise = req.expertise != null
+                    ? req.expertise.toLowerCase().replaceAll("[^a-z0-9]", "-").replaceAll("-+", "-").replaceAll("-$",
+                            "")
+                    : "";
+            String cleanLocation = req.district != null
+                    ? req.district.toLowerCase().replaceAll("[^a-z0-9]", "-").replaceAll("-+", "-").replaceAll("-$", "")
+                    : "";
 
             StringBuilder slugBuilder = new StringBuilder(cleanName);
             if (!cleanExpertise.isEmpty()) {
@@ -402,7 +428,8 @@ public class ProfileController {
             if (!cleanLocation.isEmpty()) {
                 slugBuilder.append("-").append(cleanLocation);
             }
-            // Add a very short 4-character random string to guarantee uniqueness without looking ugly
+            // Add a very short 4-character random string to guarantee uniqueness without
+            // looking ugly
             slugBuilder.append("-coach-").append(java.util.UUID.randomUUID().toString().substring(0, 4));
 
             profile.setSlug(slugBuilder.toString());
@@ -447,7 +474,11 @@ public class ProfileController {
             String ip = request.getRemoteAddr();
             checkIpLimit(ip);
             checkSpamPolicy(req.fullName + " " + req.district + " " + req.state);
-            
+
+            if (req.parentEmail != null && req.parentEmail.equalsIgnoreCase(user.getEmail())) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Parent email cannot be the same as your student account email."));
+            }
+
             if (req.dob != null && !req.dob.isEmpty()) {
                 validateDateOfBirth(req.dob);
             }
@@ -456,7 +487,7 @@ public class ProfileController {
                     .orElseThrow(() -> new RuntimeException("User not found. Please verify email first."));
 
             if ("ADMIN".equalsIgnoreCase(user.getRole()) ||
-                coachProfileRepository.findByUser(user).isPresent()
+                    coachProfileRepository.findByUser(user).isPresent()
                     || studentProfileRepository.findByUser(user).isPresent()) {
                 throw new RuntimeException(
                         "This email is already registered with a profile. Please use a different email.");
@@ -465,7 +496,8 @@ public class ProfileController {
             if (req.mobile != null && !req.mobile.trim().isEmpty()) {
                 java.util.Optional<User> existingMobile = userRepository.findByPhoneNumber(req.mobile.trim());
                 if (existingMobile.isPresent() && !existingMobile.get().getId().equals(user.getId())) {
-                    throw new RuntimeException("This phone number is already registered. Please use a different phone number.");
+                    throw new RuntimeException(
+                            "This phone number is already registered. Please use a different phone number.");
                 }
             }
 
@@ -494,28 +526,42 @@ public class ProfileController {
 
             boolean isUnder18 = false;
             try {
-                if (req.dob != null && !req.dob.isEmpty()) {
+                if (req.parentEmail != null && req.parentEmail.equalsIgnoreCase(user.getEmail())) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Parent email cannot be the same as your student account email."));
+            }
+
+            if (req.dob != null && !req.dob.isEmpty()) {
                     int birthYear = 0;
                     if (req.dob.contains("/")) {
                         birthYear = Integer.parseInt(req.dob.split("/")[2]);
                     } else if (req.dob.contains("-")) {
                         String firstPart = req.dob.split("-")[0];
-                        birthYear = firstPart.length() == 4 ? Integer.parseInt(firstPart) : Integer.parseInt(req.dob.split("-")[2]);
+                        birthYear = firstPart.length() == 4 ? Integer.parseInt(firstPart)
+                                : Integer.parseInt(req.dob.split("-")[2]);
                     }
                     int currentYear = java.time.LocalDateTime.now().getYear();
                     if (birthYear > 0 && (currentYear - birthYear < 18)) {
                         isUnder18 = true;
                     }
                 }
-            } catch (Exception e) {}
+            } catch (Exception e) {
+            }
 
             if (isUnder18 && req.parentEmail != null && !req.parentEmail.isEmpty() && (profile.getParentConsentVerified() == null || !profile.getParentConsentVerified())) {
-                String token = UUID.randomUUID().toString();
+                String token = String.format("%06d", new java.util.Random().nextInt(1000000));
                 profile.setConsentToken(token);
                 profile.setParentConsentVerified(false);
                 sendParentalConsentEmail(req.parentEmail, req.fullName, token);
             } else {
                 profile.setParentConsentVerified(true);
+            }
+
+            if (isUnder18 && (profile.getParentConsentVerified() == null || !profile.getParentConsentVerified())) {
+                profile.setStatus(ProfileStatus.PENDING_APPROVAL);
+                profile.setRejectReason("Pending Parental Consent");
+            } else {
+                profile.setStatus(ProfileStatus.APPROVED);
+                profile.setRejectReason(null);
             }
 
             studentProfileRepository.save(profile);
@@ -530,19 +576,73 @@ public class ProfileController {
         return studentProfileRepository.findByConsentToken(token).map(profile -> {
             profile.setParentConsentVerified(true);
             profile.setConsentToken(null);
+            profile.setStatus(ProfileStatus.APPROVED);
+            profile.setRejectReason(null);
             studentProfileRepository.save(profile);
             return ResponseEntity.ok("Parental consent verified successfully!");
         }).orElse(ResponseEntity.badRequest().body("Invalid or expired token."));
+    }
+
+    @PostMapping("/verify-parent-otp")
+    public ResponseEntity<?> verifyParentOtp(HttpServletRequest request, @RequestBody Map<String, String> req) {
+        try {
+            String email = (String) request.getAttribute("userEmail");
+            User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+            StudentProfile profile = studentProfileRepository.findByUser(user).orElseThrow(() -> new RuntimeException("Profile not found"));
+
+            String otp = req.get("otp");
+            if (otp == null || !otp.equals(profile.getConsentToken())) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid or expired OTP"));
+            }
+
+            profile.setParentConsentVerified(true);
+            profile.setConsentToken(null);
+            profile.setStatus(ProfileStatus.APPROVED);
+            profile.setRejectReason(null);
+            studentProfileRepository.save(profile);
+
+            return ResponseEntity.ok(Map.of("message", "Parental consent verified successfully!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/resend-parent-otp")
+    public ResponseEntity<?> resendParentOtp(HttpServletRequest request) {
+        try {
+            String email = (String) request.getAttribute("userEmail");
+            User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+            StudentProfile profile = studentProfileRepository.findByUser(user).orElseThrow(() -> new RuntimeException("Profile not found"));
+
+            if (profile.getParentEmail() == null || profile.getParentEmail().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "No parent email found on profile"));
+            }
+
+            String token = String.format("%06d", new java.util.Random().nextInt(1000000));
+            profile.setConsentToken(token);
+            profile.setParentConsentVerified(false);
+            studentProfileRepository.save(profile);
+            
+            sendParentalConsentEmail(profile.getParentEmail(), profile.getFullName(), token);
+
+            return ResponseEntity.ok(Map.of("message", "OTP resent successfully!"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     private void sendParentalConsentEmail(String email, String studentName, String token) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom("support@coachkonnects.com", "CoachKonnects");
             helper.setTo(email);
-            helper.setSubject("Parental Consent Request - CoachKonnects");
-            String url = "https://coachkonnects.com/api/profile/verify-consent/" + token; // Backend API endpoint
-            helper.setText("<h1>Parental Consent</h1><p>Please click the link below to verify your consent for " + studentName + ":</p><a href='" + url + "'>Verify Consent</a>", true);
+            helper.setSubject("Uh Oh! Your Kid Wants to Learn - CoachKonnects");
+            helper.setText("<h1>We found your kid!</h1><p>Hi there,</p><p>Looks like <b>" + studentName
+                    + "</b> is trying to sign up for CoachKonnects. We just need to make sure you're aware (😄).</p><p>Please share this 6-digit OTP with them to verify their account:</p><h2>"
+                    + token
+                    + "</h2><p>If you didn't expect this, just ignore this email and we'll keep them out of our classrooms!</p><p>- The CoachKonnects Team</p>",
+                    true);
             mailSender.send(message);
         } catch (Exception e) {
             e.printStackTrace();
@@ -607,14 +707,14 @@ public class ProfileController {
             } else {
                 throw new RuntimeException("Invalid Date of Birth format.");
             }
-            
+
             java.time.LocalDate dob = java.time.LocalDate.of(year, month, day);
             java.time.LocalDate today = java.time.LocalDate.now();
-            
+
             if (dob.isAfter(today)) {
                 throw new RuntimeException("Date of Birth cannot be in the future.");
             }
-            
+
             java.time.LocalDate sixMonthsAgo = today.minusMonths(6);
             if (dob.isAfter(sixMonthsAgo)) {
                 throw new RuntimeException("User must be at least 6 months old.");
