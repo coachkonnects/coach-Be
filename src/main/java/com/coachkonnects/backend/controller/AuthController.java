@@ -108,6 +108,22 @@ public class AuthController {
         }
     }
 
+
+    @GetMapping("/check-mobile")
+    public ResponseEntity<?> checkMobile(@RequestParam String mobile) {
+        try {
+            if (mobile == null || mobile.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Mobile number is required"));
+            }
+            boolean exists = userRepository.findByPhoneNumber(mobile.trim()).isPresent();
+            return ResponseEntity.ok(Map.of("exists", exists));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Failed to check mobile"));
+        }
+    }
+
+
+
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@RequestBody Map<String, String> body) {
         try {
