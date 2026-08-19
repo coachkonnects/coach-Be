@@ -10,4 +10,5 @@ public interface EnquiryRepository extends JpaRepository<Enquiry, Long> {
     List<Enquiry> findByCoach(CoachProfile coach);
     List<Enquiry> findByStudent(StudentProfile student);
     List<Enquiry> findByLeadEmail(String leadEmail);
+    long countByLeadEmailAndCoach(String leadEmail, CoachProfile coach);
 }

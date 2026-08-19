@@ -163,6 +163,12 @@ public class ProfileController {
     @PutMapping("/coach/me")
     public ResponseEntity<?> updateMyCoachProfile(HttpServletRequest request, @RequestBody ProfileRequest req) {
         try {
+            if (req.mobile != null && !req.mobile.isEmpty() && !req.mobile.matches("^[6-9]\\d{9}$")) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Mobile number must be 10 digits and start with 6, 7, 8, or 9."));
+            }
+            if (req.parentContact != null && !req.parentContact.isEmpty() && !req.parentContact.matches("^[6-9]\\d{9}$")) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Parent mobile number must be 10 digits and start with 6, 7, 8, or 9."));
+            }
             String email = (String) request.getAttribute("userEmail");
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("User not found."));
@@ -237,6 +243,12 @@ public class ProfileController {
     @PutMapping("/student/me")
     public ResponseEntity<?> updateMyStudentProfile(HttpServletRequest request, @RequestBody ProfileRequest req) {
         try {
+            if (req.mobile != null && !req.mobile.isEmpty() && !req.mobile.matches("^[6-9]\\d{9}$")) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Mobile number must be 10 digits and start with 6, 7, 8, or 9."));
+            }
+            if (req.parentContact != null && !req.parentContact.isEmpty() && !req.parentContact.matches("^[6-9]\\d{9}$")) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Parent mobile number must be 10 digits and start with 6, 7, 8, or 9."));
+            }
             String email = (String) request.getAttribute("userEmail");
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("User not found."));
@@ -333,6 +345,12 @@ public class ProfileController {
     @PostMapping("/coach")
     public ResponseEntity<?> createCoachProfile(@RequestBody ProfileRequest req, HttpServletRequest request) {
         try {
+            if (req.mobile != null && !req.mobile.isEmpty() && !req.mobile.matches("^[6-9]\\d{9}$")) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Mobile number must be 10 digits and start with 6, 7, 8, or 9."));
+            }
+            if (req.parentContact != null && !req.parentContact.isEmpty() && !req.parentContact.matches("^[6-9]\\d{9}$")) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Parent mobile number must be 10 digits and start with 6, 7, 8, or 9."));
+            }
             String ip = request.getRemoteAddr();
             checkIpLimit(ip);
             checkSpamPolicy(req.fullName + " " + req.district + " " + req.state);
@@ -471,6 +489,12 @@ public class ProfileController {
     @PostMapping("/student")
     public ResponseEntity<?> createStudentProfile(@RequestBody ProfileRequest req, HttpServletRequest request) {
         try {
+            if (req.mobile != null && !req.mobile.isEmpty() && !req.mobile.matches("^[6-9]\\d{9}$")) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Mobile number must be 10 digits and start with 6, 7, 8, or 9."));
+            }
+            if (req.parentContact != null && !req.parentContact.isEmpty() && !req.parentContact.matches("^[6-9]\\d{9}$")) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Parent mobile number must be 10 digits and start with 6, 7, 8, or 9."));
+            }
             String ip = request.getRemoteAddr();
             checkIpLimit(ip);
             checkSpamPolicy(req.fullName + " " + req.district + " " + req.state);

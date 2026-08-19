@@ -86,6 +86,18 @@ public class EnquiryController {
                 throw new RuntimeException("Coach not found or not approved.");
             }
 
+            // Spam protection logic
+            long currentEnquiries = enquiryRepository.countByLeadEmailAndCoach(leadEmail, coach);
+            int wordCount = 1;
+            if (coach.getExpertise() != null && !coach.getExpertise().trim().isEmpty()) {
+                wordCount = coach.getExpertise().trim().split("\\s+").length;
+            }
+            long maxEnquiries = Math.min(6, Math.max(1, wordCount) * 2);
+
+            if (currentEnquiries >= maxEnquiries) {
+                return ResponseEntity.status(429).body(Map.of("error", "You have reached the maximum number of enquiries for this coach based on their expertise. Please wait for their response."));
+            }
+
             // Save the lead directly on the enquiry — no User/StudentProfile creation
             Enquiry enquiry = new Enquiry();
             enquiry.setLeadName(leadName);
