@@ -45,8 +45,14 @@ public class PasskeyController {
             String email = request.get("email");
             if (email == null) return ResponseEntity.badRequest().body(Map.of("error", "Email is required"));
 
-            byte[] userHandle = new byte[32];
-            new SecureRandom().nextBytes(userHandle);
+            byte[] userHandle;
+            java.util.List<com.coachkonnects.backend.model.WebAuthnCredential> existingCreds = credentialRepository.findByEmail(email);
+            if (!existingCreds.isEmpty()) {
+                userHandle = java.util.Base64.getUrlDecoder().decode(existingCreds.get(0).getUserHandle());
+            } else {
+                userHandle = new byte[32];
+                new SecureRandom().nextBytes(userHandle);
+            }
 
             StartRegistrationOptions startOptions = StartRegistrationOptions.builder()
                 .user(UserIdentity.builder()
