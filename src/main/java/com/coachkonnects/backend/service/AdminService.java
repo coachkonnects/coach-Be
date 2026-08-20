@@ -286,19 +286,20 @@ public class AdminService {
     public void deleteCoachProfile(Long coachId, boolean banEmail) {
         CoachProfile coach = coachRepository.findById(coachId)
                 .orElseThrow(() -> new RuntimeException("Coach not found"));
-
         User user = coach.getUser();
 
-        if (banEmail && user.getEmail() != null) {
-            if (!blockedEmailRepository.existsByEmailIgnoreCase(user.getEmail())) {
-                String fullName = coach.getFullName();
-                blockedEmailRepository.save(new BlockedEmail(user.getEmail().toLowerCase(), fullName));
+        if (banEmail) {
+            if (user.getEmail() != null && !blockedEmailRepository.existsByEmailIgnoreCase(user.getEmail())) {
+                blockedEmailRepository.save(new BlockedEmail(user.getEmail().toLowerCase(), coach.getFullName()));
             }
+            // Just deactivate the profile if it's a ban, do not delete the user
+            coach.setActive(false);
+            coachRepository.save(coach);
+            return;
         }
 
         List<AdminFlag> flags = flagRepository.findByUserAndIsResolvedFalse(user);
         flagRepository.deleteAll(flags);
-
         List<com.coachkonnects.backend.model.Enquiry> enquiries = enquiryRepository.findByCoach(coach);
         enquiryRepository.deleteAll(enquiries);
 
