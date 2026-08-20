@@ -121,6 +121,27 @@ public class AuthController {
         }
     }
 
+    @GetMapping("/check-email")
+    public ResponseEntity<?> checkEmail(@RequestParam String email) {
+        try {
+            if (email == null || email.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Email is required"));
+            }
+            java.util.Optional<User> existingUser = userRepository.findByEmail(email.trim().toLowerCase());
+            boolean exists = false;
+            if (existingUser.isPresent()) {
+                if ("ADMIN".equalsIgnoreCase(existingUser.get().getRole()) ||
+                    coachProfileRepository.findByUser(existingUser.get()).isPresent() || 
+                    studentProfileRepository.findByUser(existingUser.get()).isPresent()) {
+                    exists = true;
+                }
+            }
+            return ResponseEntity.ok(Map.of("exists", exists));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Failed to check email"));
+        }
+    }
+
 
 
     @PostMapping("/verify-otp")
