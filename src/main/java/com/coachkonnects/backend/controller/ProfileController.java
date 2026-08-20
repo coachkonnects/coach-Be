@@ -410,6 +410,7 @@ public class ProfileController {
             profile.setUser(user);
             profile.setFullName(req.fullName);
             profile.setDateOfBirth(req.dob);
+            profile.setGender(req.gender);
             profile.setDistrict(req.district);
             profile.setState(req.state);
             profile.setPincode(req.pincode);

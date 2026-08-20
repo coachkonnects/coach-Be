@@ -106,6 +106,8 @@ public class AdminService {
                     coach.setFullName(req.fullName);
                 if (req.dob != null)
                     coach.setDateOfBirth(req.dob);
+                if (req.gender != null)
+                    coach.setGender(req.gender);
                 if (req.district != null)
                     coach.setDistrict(req.district);
                 if (req.state != null)

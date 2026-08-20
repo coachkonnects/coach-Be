@@ -29,6 +29,7 @@ public class CoachProfile {
 
     private String fullName;
     private String dateOfBirth;
+    private String gender;
     private String district;
     private String state;
     private String category;
@@ -97,6 +98,14 @@ public class CoachProfile {
 
     public void setDateOfBirth(String dateOfBirth) {
         this.dateOfBirth = dateOfBirth;
+    }
+
+    public String getGender() {
+        return gender;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
     }
 
     public String getDistrict() {
