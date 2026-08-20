@@ -52,18 +52,21 @@ public class AuthController {
             String ip = request.getRemoteAddr();
             long now = System.currentTimeMillis();
             
-            // Reset count if 2 hours have passed
-            if (otpTimestamps.containsKey(ip) && (now - otpTimestamps.get(ip)) > 2 * 60 * 60 * 1000) {
-                otpRequests.remove(ip);
+            // Skip rate limit for local testing
+            if (!"127.0.0.1".equals(ip) && !"0:0:0:0:0:0:0:1".equals(ip)) {
+                // Reset count if 2 hours have passed
+                if (otpTimestamps.containsKey(ip) && (now - otpTimestamps.get(ip)) > 2 * 60 * 60 * 1000) {
+                    otpRequests.remove(ip);
+                }
+                
+                int attempts = otpRequests.getOrDefault(ip, 0);
+                if (attempts >= 5) {
+                    return ResponseEntity.status(429).body(Map.of("error", "Maximum OTP attempts reached. Please try again after 2 hours."));
+                }
+                
+                otpRequests.put(ip, attempts + 1);
+                otpTimestamps.put(ip, now);
             }
-            
-            int attempts = otpRequests.getOrDefault(ip, 0);
-            if (attempts >= 5) {
-                return ResponseEntity.status(429).body(Map.of("error", "Maximum OTP attempts reached. Please try again after 2 hours."));
-            }
-            
-            otpRequests.put(ip, attempts + 1);
-            otpTimestamps.put(ip, now);
 
             String email = body.get("email").trim().toLowerCase();
             if (blockedEmailRepository.existsByEmailIgnoreCase(email)) {

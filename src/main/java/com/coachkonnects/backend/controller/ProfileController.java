@@ -639,13 +639,20 @@ public class ProfileController {
         try {
             String email = (String) request.getAttribute("userEmail");
             
+            String ip = request.getRemoteAddr();
             long now = System.currentTimeMillis();
-            if (parentOtpTimestamps.containsKey(email) && (now - parentOtpTimestamps.get(email)) > 2 * 60 * 60 * 1000) {
-                parentOtpRequests.remove(email);
-            }
-            int attempts = parentOtpRequests.getOrDefault(email, 0);
-            if (attempts >= 5) {
-                return ResponseEntity.status(429).body(Map.of("error", "Maximum OTP attempts reached. Please try again after 2 hours."));
+            
+            // Skip limit for local testing
+            if (!"127.0.0.1".equals(ip) && !"0:0:0:0:0:0:0:1".equals(ip)) {
+                if (parentOtpTimestamps.containsKey(email) && (now - parentOtpTimestamps.get(email)) > 2 * 60 * 60 * 1000) {
+                    parentOtpRequests.remove(email);
+                }
+                int attempts = parentOtpRequests.getOrDefault(email, 0);
+                if (attempts >= 5) {
+                    return ResponseEntity.status(429).body(Map.of("error", "Maximum OTP attempts reached. Please try again after 2 hours."));
+                }
+                parentOtpRequests.put(email, attempts + 1);
+                parentOtpTimestamps.put(email, now);
             }
 
             User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
@@ -661,9 +668,6 @@ public class ProfileController {
             studentProfileRepository.save(profile);
             
             sendParentalConsentEmail(profile.getParentEmail(), profile.getFullName(), token);
-
-            parentOtpRequests.put(email, attempts + 1);
-            parentOtpTimestamps.put(email, now);
 
             return ResponseEntity.ok(Map.of("message", "OTP resent successfully!"));
         } catch (Exception e) {
