@@ -24,6 +24,8 @@ import com.coachkonnects.backend.model.ProfileStatus;
 import com.coachkonnects.backend.repository.AdminFlagRepository;
 import com.coachkonnects.backend.repository.EnquiryRepository;
 import java.util.Map;
+import java.util.Optional;
+
 import java.util.HashMap;
 import java.util.UUID;
 import jakarta.servlet.http.HttpServletRequest;
@@ -246,8 +248,16 @@ public class ProfileController {
     @PutMapping("/student/me")
     public ResponseEntity<?> updateMyStudentProfile(HttpServletRequest request, @RequestBody ProfileRequest req) {
         try {
-            if (req.mobile != null && !req.mobile.isEmpty() && !req.mobile.matches("^[6-9]\\d{9}$")) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Mobile number must be 10 digits and start with 6, 7, 8, or 9."));
+            if (req.mobile != null && !req.mobile.isEmpty()) {
+                if (!req.mobile.matches("^[6-9]\\d{9}$")) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Mobile number must be 10 digits and start with 6, 7, 8, or 9."));
+                }
+                
+                String email = (String) request.getAttribute("userEmail");
+                Optional<User> existingUser = userRepository.findByPhoneNumber(req.mobile);
+                if (existingUser.isPresent() && !existingUser.get().getEmail().equals(email)) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "This mobile number is already registered with another account."));
+                }
             }
             if (req.parentContact != null && !req.parentContact.isEmpty() && !req.parentContact.matches("^[6-9]\\d{9}$")) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Parent mobile number must be 10 digits and start with 6, 7, 8, or 9."));
@@ -255,6 +265,11 @@ public class ProfileController {
             String email = (String) request.getAttribute("userEmail");
             User user = userRepository.findByEmail(email)
                     .orElseThrow(() -> new RuntimeException("User not found."));
+
+            if (req.mobile != null && !req.mobile.isEmpty()) {
+                user.setPhoneNumber(req.mobile);
+                userRepository.save(user);
+            }
 
             StudentProfile profile = studentProfileRepository.findByUser(user).orElse(new StudentProfile());
             if (profile.getUser() == null) {
