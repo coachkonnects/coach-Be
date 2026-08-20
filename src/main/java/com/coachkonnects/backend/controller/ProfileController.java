@@ -72,6 +72,9 @@ public class ProfileController {
             "idiot", "stupid", "dumb" // Negative Words
     );
 
+    private final java.util.concurrent.ConcurrentHashMap<String, Integer> parentOtpRequests = new java.util.concurrent.ConcurrentHashMap<>();
+    private final java.util.concurrent.ConcurrentHashMap<String, Long> parentOtpTimestamps = new java.util.concurrent.ConcurrentHashMap<>();
+
     public static class ProfileRequest {
         public String email;
         public Long demandId; // Optional link to a specific demand
@@ -635,6 +638,16 @@ public class ProfileController {
     public ResponseEntity<?> resendParentOtp(HttpServletRequest request) {
         try {
             String email = (String) request.getAttribute("userEmail");
+            
+            long now = System.currentTimeMillis();
+            if (parentOtpTimestamps.containsKey(email) && (now - parentOtpTimestamps.get(email)) > 2 * 60 * 60 * 1000) {
+                parentOtpRequests.remove(email);
+            }
+            int attempts = parentOtpRequests.getOrDefault(email, 0);
+            if (attempts >= 5) {
+                return ResponseEntity.status(429).body(Map.of("error", "Maximum OTP attempts reached. Please try again after 2 hours."));
+            }
+
             User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
             StudentProfile profile = studentProfileRepository.findByUser(user).orElseThrow(() -> new RuntimeException("Profile not found"));
 
@@ -648,6 +661,9 @@ public class ProfileController {
             studentProfileRepository.save(profile);
             
             sendParentalConsentEmail(profile.getParentEmail(), profile.getFullName(), token);
+
+            parentOtpRequests.put(email, attempts + 1);
+            parentOtpTimestamps.put(email, now);
 
             return ResponseEntity.ok(Map.of("message", "OTP resent successfully!"));
         } catch (Exception e) {

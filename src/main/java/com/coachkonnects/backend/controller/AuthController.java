@@ -52,15 +52,14 @@ public class AuthController {
             String ip = request.getRemoteAddr();
             long now = System.currentTimeMillis();
             
-            // Reset count if 15 minutes have passed
-            if (otpTimestamps.containsKey(ip) && (now - otpTimestamps.get(ip)) > 15 * 60 * 1000) {
+            // Reset count if 2 hours have passed
+            if (otpTimestamps.containsKey(ip) && (now - otpTimestamps.get(ip)) > 2 * 60 * 60 * 1000) {
                 otpRequests.remove(ip);
             }
             
             int attempts = otpRequests.getOrDefault(ip, 0);
-            // Bypassed for testing phase
-            if (attempts >= 5000) {
-                return ResponseEntity.status(429).body(Map.of("error", "Too many requests. Please try again later."));
+            if (attempts >= 5) {
+                return ResponseEntity.status(429).body(Map.of("error", "Maximum OTP attempts reached. Please try again after 2 hours."));
             }
             
             otpRequests.put(ip, attempts + 1);
