@@ -220,6 +220,12 @@ public class ProfileController {
 
             CoachProfile saved = coachProfileRepository.save(profile);
             return ResponseEntity.ok(saved);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            String msg = e.getMessage();
+            if (msg != null && msg.contains("phone_number")) {
+                return ResponseEntity.badRequest().body(Map.of("error", "This phone number is already registered to another user."));
+            }
+            return ResponseEntity.badRequest().body(Map.of("error", "Data conflict. Duplicate entry found."));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
@@ -858,11 +864,11 @@ public class ProfileController {
 
 
 
-        
-        // 1. Check if student has taken a class (APPROVED enquiry)
-        boolean hasTakenClass = enquiryRepository.existsByStudentAndCoachAndStatus(student, coach, EnquiryStatus.APPROVED);
-        if (!hasTakenClass) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "You can only review coaches you have taken classes from."));
+        // 1. Check if student has an approved connection
+        boolean isConnected = enquiryRepository.existsByStudentAndCoachAndStatus(student, coach, EnquiryStatus.APPROVED) || 
+                              enquiryRepository.existsByLeadEmailAndCoachAndStatus(student.getUser().getEmail(), coach, EnquiryStatus.APPROVED);
+        if (!isConnected) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "You can only review coaches after they have approved your enquiry."));
         }
 
         // 2. Check if already reviewed
