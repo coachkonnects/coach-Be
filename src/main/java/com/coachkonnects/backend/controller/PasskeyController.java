@@ -2,6 +2,8 @@ package com.coachkonnects.backend.controller;
 
 import com.coachkonnects.backend.model.WebAuthnCredential;
 import com.coachkonnects.backend.repository.WebAuthnCredentialRepository;
+import com.coachkonnects.backend.repository.UserRepository;
+import com.coachkonnects.backend.model.User;
 import com.coachkonnects.backend.util.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yubico.webauthn.*;
@@ -31,6 +33,9 @@ public class PasskeyController {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+    @Autowired
+    private UserRepository userRepository;
 
     // Temporary storage for challenges
     private final Map<String, RegistrationRequest> registrationRequests = new ConcurrentHashMap<>();
@@ -207,7 +212,9 @@ public class PasskeyController {
                     credentialRepository.save(cred);
                 }
 
-                String token = jwtUtil.generateToken(email, "ADMIN");
+                User user = userRepository.findByEmail(email).orElse(null);
+                String role = (user != null && user.getRole() != null) ? user.getRole() : "STUDENT";
+                String token = jwtUtil.generateToken(email, role);
                 return ResponseEntity.ok(Map.of("status", "SUCCESS", "token", token, "email", email));
             } else {
                 return ResponseEntity.status(401).body(Map.of("error", "Invalid passkey signature"));
