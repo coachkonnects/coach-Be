@@ -3,6 +3,8 @@ package com.coachkonnects.backend.controller;
 import com.coachkonnects.backend.model.CoachProfile;
 import com.coachkonnects.backend.model.StudentProfile;
 import com.coachkonnects.backend.model.ProfileStatus;
+import com.coachkonnects.backend.model.Review;
+import com.coachkonnects.backend.model.ReviewStatus;
 import com.coachkonnects.backend.model.Enquiry;
 import com.coachkonnects.backend.model.EnquiryStatus;
 import com.coachkonnects.backend.repository.CoachProfileRepository;
@@ -298,6 +300,21 @@ public class AdminController {
     @GetMapping("/reviews")
     public ResponseEntity<?> getAllReviews() {
         return ResponseEntity.ok(reviewRepository.findAll(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt")));
+    }
+
+    @PutMapping("/reviews/{id}/status")
+    public ResponseEntity<?> updateReviewStatus(@PathVariable Long id, @RequestBody java.util.Map<String, String> payload) {
+        try {
+            Review review = reviewRepository.findById(id).orElseThrow(() -> new RuntimeException("Review not found"));
+            String statusStr = payload.get("status");
+            if (statusStr != null) {
+                review.setStatus(ReviewStatus.valueOf(statusStr.toUpperCase()));
+                reviewRepository.save(review);
+            }
+            return ResponseEntity.ok(Map.of("message", "Review status updated successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     @DeleteMapping("/reviews/{id}")

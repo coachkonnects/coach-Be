@@ -1,6 +1,8 @@
 package com.coachkonnects.backend.model;
 
 import jakarta.persistence.*;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
@@ -29,6 +31,10 @@ public class Review {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column
+    private ReviewStatus status = ReviewStatus.PENDING;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -46,4 +52,6 @@ public class Review {
     public String getComment() { return comment; }
     public void setComment(String comment) { this.comment = comment; }
     public LocalDateTime getCreatedAt() { return createdAt; }
+    public ReviewStatus getStatus() { return status; }
+    public void setStatus(ReviewStatus status) { this.status = status; }
 }

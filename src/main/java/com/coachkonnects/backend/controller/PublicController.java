@@ -2,6 +2,7 @@ package com.coachkonnects.backend.controller;
 
 import com.coachkonnects.backend.model.CoachProfile;
 import com.coachkonnects.backend.model.ProfileStatus;
+import com.coachkonnects.backend.model.ReviewStatus;
 import com.coachkonnects.backend.repository.CoachProfileRepository;
 import com.coachkonnects.backend.repository.CoachClassRepository;
 import com.coachkonnects.backend.repository.ReviewRepository;
@@ -53,6 +54,21 @@ public class PublicController {
             c.setReviewCount(count != null ? count : 0L);
             return ResponseEntity.ok(c);
         }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/coach/{slug}/reviews")
+    public ResponseEntity<?> getPublicCoachReviews(@PathVariable String slug) {
+        Optional<CoachProfile> coachOpt;
+        try {
+            Long id = Long.parseLong(slug);
+            coachOpt = coachProfileRepository.findById(id).filter(c -> c.getStatus() == ProfileStatus.APPROVED && c.isActive());
+        } catch (NumberFormatException e) {
+            coachOpt = coachProfileRepository.findBySlugAndStatusAndIsActiveTrue(slug, ProfileStatus.APPROVED);
+        }
+        if (coachOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(reviewRepository.findByCoachIdAndStatusOrderByCreatedAtDesc(coachOpt.get().getId(), ReviewStatus.APPROVED));
     }
 
     @GetMapping("/coach/{slug}/classes")
