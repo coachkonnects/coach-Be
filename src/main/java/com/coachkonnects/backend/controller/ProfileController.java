@@ -169,10 +169,13 @@ public class ProfileController {
     public ResponseEntity<?> updateMyCoachProfile(HttpServletRequest request, @RequestBody ProfileRequest req) {
         try {
             if (req.mobile != null && !req.mobile.isEmpty() && !req.mobile.matches("^[6-9]\\d{9}$")) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Mobile number must be 10 digits and start with 6, 7, 8, or 9."));
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Mobile number must be 10 digits and start with 6, 7, 8, or 9."));
             }
-            if (req.parentContact != null && !req.parentContact.isEmpty() && !req.parentContact.matches("^[6-9]\\d{9}$")) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Parent mobile number must be 10 digits and start with 6, 7, 8, or 9."));
+            if (req.parentContact != null && !req.parentContact.isEmpty()
+                    && !req.parentContact.matches("^[6-9]\\d{9}$")) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Parent mobile number must be 10 digits and start with 6, 7, 8, or 9."));
             }
             String email = (String) request.getAttribute("userEmail");
             User user = userRepository.findByEmail(email)
@@ -180,6 +183,15 @@ public class ProfileController {
 
             CoachProfile profile = coachProfileRepository.findByUser(user)
                     .orElseThrow(() -> new RuntimeException("Coach profile not found."));
+
+            if (req.description != null && !req.description.isEmpty()) {
+                if (req.description.trim().split("\\s+").length > 150) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Description / Bio must not exceed 150 words!"));
+                }
+                if (req.description.matches(".*[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}.*") || req.description.matches(".*\\d.*") || !req.description.matches("^[a-zA-Z\\s.,!?'\\n\\r-]+$")) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Description / Bio cannot contain numbers, emails, or special characters."));
+                }
+            }
 
             if (req.mobile != null && !req.mobile.isEmpty()) {
                 user.setPhoneNumber(req.mobile);
@@ -250,17 +262,21 @@ public class ProfileController {
         try {
             if (req.mobile != null && !req.mobile.isEmpty()) {
                 if (!req.mobile.matches("^[6-9]\\d{9}$")) {
-                    return ResponseEntity.badRequest().body(Map.of("error", "Mobile number must be 10 digits and start with 6, 7, 8, or 9."));
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "Mobile number must be 10 digits and start with 6, 7, 8, or 9."));
                 }
-                
+
                 String email = (String) request.getAttribute("userEmail");
                 Optional<User> existingUser = userRepository.findByPhoneNumber(req.mobile);
                 if (existingUser.isPresent() && !existingUser.get().getEmail().equals(email)) {
-                    return ResponseEntity.badRequest().body(Map.of("error", "This mobile number is already registered with another account."));
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "This mobile number is already registered with another account."));
                 }
             }
-            if (req.parentContact != null && !req.parentContact.isEmpty() && !req.parentContact.matches("^[6-9]\\d{9}$")) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Parent mobile number must be 10 digits and start with 6, 7, 8, or 9."));
+            if (req.parentContact != null && !req.parentContact.isEmpty()
+                    && !req.parentContact.matches("^[6-9]\\d{9}$")) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Parent mobile number must be 10 digits and start with 6, 7, 8, or 9."));
             }
             String email = (String) request.getAttribute("userEmail");
             User user = userRepository.findByEmail(email)
@@ -279,7 +295,8 @@ public class ProfileController {
             if (req.fullName != null)
                 profile.setFullName(req.fullName);
             if (req.parentEmail != null && req.parentEmail.equalsIgnoreCase(user.getEmail())) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Parent email cannot be the same as your student account email."));
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Parent email cannot be the same as your student account email."));
             }
 
             if (req.dob != null && !req.dob.isEmpty()) {
@@ -364,17 +381,21 @@ public class ProfileController {
     public ResponseEntity<?> createCoachProfile(@RequestBody ProfileRequest req, HttpServletRequest request) {
         try {
             if (req.mobile != null && !req.mobile.isEmpty() && !req.mobile.matches("^[6-9]\\d{9}$")) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Mobile number must be 10 digits and start with 6, 7, 8, or 9."));
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Mobile number must be 10 digits and start with 6, 7, 8, or 9."));
             }
-            if (req.parentContact != null && !req.parentContact.isEmpty() && !req.parentContact.matches("^[6-9]\\d{9}$")) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Parent mobile number must be 10 digits and start with 6, 7, 8, or 9."));
+            if (req.parentContact != null && !req.parentContact.isEmpty()
+                    && !req.parentContact.matches("^[6-9]\\d{9}$")) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Parent mobile number must be 10 digits and start with 6, 7, 8, or 9."));
             }
             String ip = request.getRemoteAddr();
             checkIpLimit(ip);
             checkSpamPolicy(req.fullName + " " + req.district + " " + req.state);
 
             if (req.parentEmail != null && req.parentEmail.equalsIgnoreCase(req.email)) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Parent email cannot be the same as your student account email."));
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Parent email cannot be the same as your student account email."));
             }
 
             if (req.dob != null && !req.dob.isEmpty()) {
@@ -509,17 +530,21 @@ public class ProfileController {
     public ResponseEntity<?> createStudentProfile(@RequestBody ProfileRequest req, HttpServletRequest request) {
         try {
             if (req.mobile != null && !req.mobile.isEmpty() && !req.mobile.matches("^[6-9]\\d{9}$")) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Mobile number must be 10 digits and start with 6, 7, 8, or 9."));
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Mobile number must be 10 digits and start with 6, 7, 8, or 9."));
             }
-            if (req.parentContact != null && !req.parentContact.isEmpty() && !req.parentContact.matches("^[6-9]\\d{9}$")) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Parent mobile number must be 10 digits and start with 6, 7, 8, or 9."));
+            if (req.parentContact != null && !req.parentContact.isEmpty()
+                    && !req.parentContact.matches("^[6-9]\\d{9}$")) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Parent mobile number must be 10 digits and start with 6, 7, 8, or 9."));
             }
             String ip = request.getRemoteAddr();
             checkIpLimit(ip);
             checkSpamPolicy(req.fullName + " " + req.district + " " + req.state);
 
             if (req.parentEmail != null && req.email != null && req.parentEmail.equalsIgnoreCase(req.email)) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Parent email cannot be the same as your student account email."));
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Parent email cannot be the same as your student account email."));
             }
 
             if (req.dob != null && !req.dob.isEmpty()) {
@@ -570,10 +595,11 @@ public class ProfileController {
             boolean isUnder18 = false;
             try {
                 if (req.parentEmail != null && req.parentEmail.equalsIgnoreCase(user.getEmail())) {
-                return ResponseEntity.badRequest().body(Map.of("error", "Parent email cannot be the same as your student account email."));
-            }
+                    return ResponseEntity.badRequest()
+                            .body(Map.of("error", "Parent email cannot be the same as your student account email."));
+                }
 
-            if (req.dob != null && !req.dob.isEmpty()) {
+                if (req.dob != null && !req.dob.isEmpty()) {
                     int birthYear = 0;
                     if (req.dob.contains("/")) {
                         birthYear = Integer.parseInt(req.dob.split("/")[2]);
@@ -590,7 +616,8 @@ public class ProfileController {
             } catch (Exception e) {
             }
 
-            if (isUnder18 && req.parentEmail != null && !req.parentEmail.isEmpty() && (profile.getParentConsentVerified() == null || !profile.getParentConsentVerified())) {
+            if (isUnder18 && req.parentEmail != null && !req.parentEmail.isEmpty()
+                    && (profile.getParentConsentVerified() == null || !profile.getParentConsentVerified())) {
                 String token = String.format("%06d", new java.util.Random().nextInt(1000000));
                 profile.setConsentToken(token);
                 profile.setParentConsentVerified(false);
@@ -631,7 +658,8 @@ public class ProfileController {
         try {
             String email = (String) request.getAttribute("userEmail");
             User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
-            StudentProfile profile = studentProfileRepository.findByUser(user).orElseThrow(() -> new RuntimeException("Profile not found"));
+            StudentProfile profile = studentProfileRepository.findByUser(user)
+                    .orElseThrow(() -> new RuntimeException("Profile not found"));
 
             String otp = req.get("otp");
             if (otp == null || !otp.equals(profile.getConsentToken())) {
@@ -654,25 +682,28 @@ public class ProfileController {
     public ResponseEntity<?> resendParentOtp(HttpServletRequest request) {
         try {
             String email = (String) request.getAttribute("userEmail");
-            
+
             String ip = request.getRemoteAddr();
             long now = System.currentTimeMillis();
-            
+
             // Skip limit for local testing
             if (!"127.0.0.1".equals(ip) && !"0:0:0:0:0:0:0:1".equals(ip)) {
-                if (parentOtpTimestamps.containsKey(email) && (now - parentOtpTimestamps.get(email)) > 2 * 60 * 60 * 1000) {
+                if (parentOtpTimestamps.containsKey(email)
+                        && (now - parentOtpTimestamps.get(email)) > 2 * 60 * 60 * 1000) {
                     parentOtpRequests.remove(email);
                 }
                 int attempts = parentOtpRequests.getOrDefault(email, 0);
                 if (attempts >= 5) {
-                    return ResponseEntity.status(429).body(Map.of("error", "Maximum OTP attempts reached. Please try again after 2 hours."));
+                    return ResponseEntity.status(429)
+                            .body(Map.of("error", "Maximum OTP attempts reached. Please try again after 2 hours."));
                 }
                 parentOtpRequests.put(email, attempts + 1);
                 parentOtpTimestamps.put(email, now);
             }
 
             User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
-            StudentProfile profile = studentProfileRepository.findByUser(user).orElseThrow(() -> new RuntimeException("Profile not found"));
+            StudentProfile profile = studentProfileRepository.findByUser(user)
+                    .orElseThrow(() -> new RuntimeException("Profile not found"));
 
             if (profile.getParentEmail() == null || profile.getParentEmail().isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "No parent email found on profile"));
@@ -682,7 +713,7 @@ public class ProfileController {
             profile.setConsentToken(token);
             profile.setParentConsentVerified(false);
             studentProfileRepository.save(profile);
-            
+
             sendParentalConsentEmail(profile.getParentEmail(), profile.getFullName(), token);
 
             return ResponseEntity.ok(Map.of("message", "OTP resent successfully!"));
