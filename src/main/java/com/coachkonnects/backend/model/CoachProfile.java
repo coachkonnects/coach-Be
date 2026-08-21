@@ -43,6 +43,8 @@ public class CoachProfile {
 
     private String classMode;
     private String pricing;
+    private Integer minPrice;
+    private Integer maxPrice;
     private String targetAudience;
 
     private String availableDays;
@@ -210,6 +212,22 @@ public class CoachProfile {
 
     public void setPricing(String pricing) {
         this.pricing = pricing;
+    }
+
+    public Integer getMinPrice() {
+        return minPrice;
+    }
+
+    public void setMinPrice(Integer minPrice) {
+        this.minPrice = minPrice;
+    }
+
+    public Integer getMaxPrice() {
+        return maxPrice;
+    }
+
+    public void setMaxPrice(Integer maxPrice) {
+        this.maxPrice = maxPrice;
     }
 
     public String getTargetAudience() {

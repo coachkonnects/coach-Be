@@ -94,6 +94,8 @@ public class ProfileController {
         public String description;
         public String classMode;
         public String pricing;
+        public Integer minPrice;
+        public Integer maxPrice;
         public String targetAudience;
         public String availableDays;
         public String timeSlots;
@@ -185,8 +187,8 @@ public class ProfileController {
                     .orElseThrow(() -> new RuntimeException("Coach profile not found."));
 
             if (req.description != null && !req.description.isEmpty()) {
-                if (req.description.trim().split("\\s+").length > 150) {
-                    return ResponseEntity.badRequest().body(Map.of("error", "Description / Bio must not exceed 150 words!"));
+                if (req.description.trim().length() > 140) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "Description / Bio must not exceed 140 characters!"));
                 }
                 if (req.description.matches(".*[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}.*") || req.description.matches(".*\\d.*") || !req.description.matches("^[a-zA-Z\\s.,!?'\\n\\r-]+$")) {
                     return ResponseEntity.badRequest().body(Map.of("error", "Description / Bio cannot contain numbers, emails, or special characters."));
