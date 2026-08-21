@@ -4,6 +4,7 @@ import com.coachkonnects.backend.model.CoachProfile;
 import com.coachkonnects.backend.model.ProfileStatus;
 import com.coachkonnects.backend.repository.CoachProfileRepository;
 import com.coachkonnects.backend.repository.CoachClassRepository;
+import com.coachkonnects.backend.repository.ReviewRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,9 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/public")
 public class PublicController {
+    @Autowired
+    private ReviewRepository reviewRepository;
+
 
     @Autowired
     private CoachProfileRepository coachProfileRepository;
@@ -24,6 +28,12 @@ public class PublicController {
     @GetMapping("/coaches")
     public ResponseEntity<?> getPublicCoaches() {
         List<CoachProfile> approvedCoaches = coachProfileRepository.findByStatusAndIsActiveTrue(ProfileStatus.APPROVED);
+        approvedCoaches.forEach(c -> {
+            Double avg = reviewRepository.getAverageRatingForCoach(c.getId());
+            Long count = reviewRepository.getReviewCountForCoach(c.getId());
+            c.setAverageRating(avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0);
+            c.setReviewCount(count != null ? count : 0L);
+        });
         return ResponseEntity.ok(approvedCoaches);
     }
 
@@ -36,7 +46,13 @@ public class PublicController {
         } catch (NumberFormatException e) {
             coachOpt = coachProfileRepository.findBySlugAndStatusAndIsActiveTrue(slug, ProfileStatus.APPROVED);
         }
-        return coachOpt.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+        return coachOpt.map(c -> {
+            Double avg = reviewRepository.getAverageRatingForCoach(c.getId());
+            Long count = reviewRepository.getReviewCountForCoach(c.getId());
+            c.setAverageRating(avg != null ? Math.round(avg * 10.0) / 10.0 : 0.0);
+            c.setReviewCount(count != null ? count : 0L);
+            return ResponseEntity.ok(c);
+        }).orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/coach/{slug}/classes")

@@ -11,6 +11,7 @@ import com.coachkonnects.backend.repository.EnquiryRepository;
 import com.coachkonnects.backend.repository.CoachClassRepository;
 import com.coachkonnects.backend.model.CoachClass;
 import com.coachkonnects.backend.service.AdminService;
+import com.coachkonnects.backend.repository.ReviewRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +22,9 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
+    @Autowired
+    private ReviewRepository reviewRepository;
+
 
     @Autowired
     private CoachProfileRepository coachProfileRepository;
@@ -289,5 +293,19 @@ public class AdminController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
         }
+    }
+
+    @GetMapping("/reviews")
+    public ResponseEntity<?> getAllReviews() {
+        return ResponseEntity.ok(reviewRepository.findAll(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt")));
+    }
+
+    @DeleteMapping("/reviews/{id}")
+    public ResponseEntity<?> deleteReview(@PathVariable Long id) {
+        if (!reviewRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        reviewRepository.deleteById(id);
+        return ResponseEntity.ok(java.util.Map.of("message", "Review deleted"));
     }
 }

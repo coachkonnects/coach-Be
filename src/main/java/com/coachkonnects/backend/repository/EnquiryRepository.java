@@ -11,4 +11,6 @@ public interface EnquiryRepository extends JpaRepository<Enquiry, Long> {
     List<Enquiry> findByStudent(StudentProfile student);
     List<Enquiry> findByLeadEmail(String leadEmail);
     long countByLeadEmailAndCoach(String leadEmail, CoachProfile coach);
+
+    boolean existsByStudentAndCoachAndStatus(com.coachkonnects.backend.model.StudentProfile student, com.coachkonnects.backend.model.CoachProfile coach, com.coachkonnects.backend.model.EnquiryStatus status);
 }

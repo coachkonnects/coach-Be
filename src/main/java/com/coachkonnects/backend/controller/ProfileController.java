@@ -10,6 +10,9 @@ import com.coachkonnects.backend.repository.StudentProfileRepository;
 import com.coachkonnects.backend.repository.UserRepository;
 import com.coachkonnects.backend.repository.IpTrackingRepository;
 import com.coachkonnects.backend.model.IpTracking;
+import com.coachkonnects.backend.repository.ReviewRepository;
+import com.coachkonnects.backend.model.Review;
+import com.coachkonnects.backend.model.EnquiryStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -64,6 +67,9 @@ public class ProfileController {
 
     @Autowired
     private EnquiryRepository enquiryRepository;
+    @Autowired
+    private ReviewRepository reviewRepository;
+
 
     @Autowired
     private com.coachkonnects.backend.service.ModerationService moderationService;
@@ -815,5 +821,73 @@ public class ProfileController {
         } catch (Exception e) {
             throw new RuntimeException("Invalid Date of Birth.");
         }
+    }
+
+    public static class ReviewRequest {
+        public Integer rating;
+        public String comment;
+    }
+
+    @PostMapping("/coach/{coachId}/review")
+    public ResponseEntity<?> submitReview(@PathVariable Long coachId,
+                                          @RequestBody ReviewRequest req,
+                                          HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized"));
+        }
+        String email = (String) request.getAttribute("userEmail");
+        if (email == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Unauthorized"));
+        }
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "User not found"));
+        }
+        Optional<StudentProfile> studentOpt = studentProfileRepository.findByUser(userOpt.get());
+        if (studentOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Only students can leave reviews"));
+        }
+        StudentProfile student = studentOpt.get();
+        
+        Optional<CoachProfile> coachOpt = coachProfileRepository.findById(coachId);
+        if (coachOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Coach not found"));
+        }
+        CoachProfile coach = coachOpt.get();
+
+
+
+        
+        // 1. Check if student has taken a class (APPROVED enquiry)
+        boolean hasTakenClass = enquiryRepository.existsByStudentAndCoachAndStatus(student, coach, EnquiryStatus.APPROVED);
+        if (!hasTakenClass) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "You can only review coaches you have taken classes from."));
+        }
+
+        // 2. Check if already reviewed
+        boolean alreadyReviewed = reviewRepository.existsByCoachIdAndStudentId(coachId, student.getId());
+        if (alreadyReviewed) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Whoa there, eager beaver! 🦫 You've already reviewed this coach. We get it, they're awesome!"));
+        }
+
+        // 3. Moderation check
+        if (req.comment != null && !req.comment.trim().isEmpty()) {
+            try {
+                moderationService.validateContent(req.comment);
+            } catch (RuntimeException e) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
+            }
+        }
+
+        // 4. Save review
+        Review review = new Review();
+        review.setCoach(coach);
+        review.setStudent(student);
+        review.setRating(req.rating != null ? req.rating : 5);
+        review.setComment(req.comment);
+        reviewRepository.save(review);
+
+        return ResponseEntity.ok(Map.of("message", "Review submitted successfully!"));
     }
 }
