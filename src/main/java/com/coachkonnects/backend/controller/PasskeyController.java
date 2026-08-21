@@ -215,7 +215,7 @@ public class PasskeyController {
                 User user = userRepository.findByEmail(email).orElse(null);
                 String role = (user != null && user.getRole() != null) ? user.getRole() : "STUDENT";
                 String token = jwtUtil.generateToken(email, role);
-                return ResponseEntity.ok(Map.of("status", "SUCCESS", "token", token, "email", email));
+                return ResponseEntity.ok(Map.of("status", "SUCCESS", "token", token, "email", email, "role", role));
             } else {
                 return ResponseEntity.status(401).body(Map.of("error", "Invalid passkey signature"));
             }
