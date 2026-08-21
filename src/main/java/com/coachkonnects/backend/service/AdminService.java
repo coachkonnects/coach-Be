@@ -152,8 +152,9 @@ public class AdminService {
         coach.setStatus(ProfileStatus.APPROVED);
         coachRepository.save(coach);
 
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            try {
+                MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             helper.setFrom("support@coachkonnects.com", "CoachKonnects Security");
             helper.setTo(coach.getUser().getEmail());
@@ -166,10 +167,11 @@ public class AdminService {
                     "<p><a href='https://coachkonnects.com/login' style='display:inline-block;padding:10px 20px;background-color:#F97316;color:white;text-decoration:none;border-radius:5px;'>Log In to Your Dashboard</a></p>";
 
             helper.setText(htmlContent, true);
-            mailSender.send(message);
-        } catch (Exception e) {
-            System.err.println("Failed to send approval email: " + e.getMessage());
-        }
+                mailSender.send(message);
+            } catch (Exception e) {
+                System.err.println("Failed to send approval email: " + e.getMessage());
+            }
+        });
     }
 
     public void rejectCoachProfile(Long coachId) {
@@ -188,8 +190,9 @@ public class AdminService {
 
         coachRepository.save(coach);
 
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            try {
+                MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             helper.setFrom("support@coachkonnects.com", "CoachKonnects Security");
             helper.setTo(coach.getUser().getEmail());
@@ -201,10 +204,11 @@ public class AdminService {
                     "<p>Please review your profile details and ensure they meet our community guidelines before resubmitting.</p>";
 
             helper.setText(htmlContent, true);
-            mailSender.send(message);
-        } catch (Exception e) {
-            System.err.println("Failed to send rejection email: " + e.getMessage());
-        }
+                mailSender.send(message);
+            } catch (Exception e) {
+                System.err.println("Failed to send rejection email: " + e.getMessage());
+            }
+        });
     }
 
     public void approveStudentProfile(Long studentId) {
@@ -214,8 +218,9 @@ public class AdminService {
         student.setRejectReason(null);
         studentRepository.save(student);
 
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            try {
+                MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             helper.setFrom("support@coachkonnects.com", "CoachKonnects Registration");
             helper.setTo(student.getUser().getEmail());
@@ -227,10 +232,11 @@ public class AdminService {
                     "<p><a href='https://coachkonnects.com/login' style='display:inline-block;padding:10px 20px;background-color:#F97316;color:white;text-decoration:none;border-radius:5px;'>Log In to Your Dashboard</a></p>";
 
             helper.setText(htmlContent, true);
-            mailSender.send(message);
-        } catch (Exception e) {
-            System.err.println("Failed to send student approval email: " + e.getMessage());
-        }
+                mailSender.send(message);
+            } catch (Exception e) {
+                System.err.println("Failed to send student approval email: " + e.getMessage());
+            }
+        });
     }
 
     public void rejectStudentProfile(Long studentId, String reason) {
@@ -240,8 +246,9 @@ public class AdminService {
         student.setRejectReason(reason);
         studentRepository.save(student);
 
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
+        java.util.concurrent.CompletableFuture.runAsync(() -> {
+            try {
+                MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             helper.setFrom("support@coachkonnects.com", "CoachKonnects Moderation");
             helper.setTo(student.getUser().getEmail());
@@ -254,10 +261,11 @@ public class AdminService {
                     "<p>Please log in to your dashboard and update your profile to resubmit.</p>";
 
             helper.setText(htmlContent, true);
-            mailSender.send(message);
-        } catch (Exception e) {
-            System.err.println("Failed to send student rejection email: " + e.getMessage());
-        }
+                mailSender.send(message);
+            } catch (Exception e) {
+                System.err.println("Failed to send student rejection email: " + e.getMessage());
+            }
+        });
     }
 
     public void deleteStudentProfile(Long studentId, boolean banEmail) {
