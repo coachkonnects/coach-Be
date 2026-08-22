@@ -173,6 +173,24 @@ public class ProfileController {
         }
     }
 
+
+    @GetMapping("/coach/me/reviews")
+    public ResponseEntity<?> getMyCoachReviews(HttpServletRequest request) {
+        try {
+            String email = (String) request.getAttribute("userEmail");
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found."));
+            
+            CoachProfile profile = coachProfileRepository.findByUser(user)
+                    .orElseThrow(() -> new RuntimeException("Coach profile not found."));
+
+            List<Review> reviews = reviewRepository.findByCoachIdOrderByCreatedAtDesc(profile.getId());
+            return ResponseEntity.ok(reviews);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
     @PutMapping("/coach/me")
     public ResponseEntity<?> updateMyCoachProfile(HttpServletRequest request, @RequestBody ProfileRequest req) {
         try {
