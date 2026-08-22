@@ -52,6 +52,9 @@ public class DemandController {
         String token = null;
         com.coachkonnects.backend.model.User existingUserCheck = userRepository.findByEmail(email.trim().toLowerCase()).orElse(null);
         if (existingUserCheck == null) {
+            if (userRepository.findByPhoneNumber(mobileNumber.trim()).isPresent()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "number already registered try new number"));
+            }
             com.coachkonnects.backend.model.User newUser = new com.coachkonnects.backend.model.User();
             newUser.setEmail(email.trim().toLowerCase());
             newUser.setRole("STUDENT");

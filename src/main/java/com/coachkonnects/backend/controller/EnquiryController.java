@@ -80,6 +80,9 @@ public class EnquiryController {
             // Auto-register student if they don't exist
             com.coachkonnects.backend.model.User existingUserCheck = userRepository.findByEmail(leadEmail.toLowerCase()).orElse(null);
             if (existingUserCheck == null) {
+                if (userRepository.findByPhoneNumber(leadPhone).isPresent()) {
+                    return ResponseEntity.badRequest().body(Map.of("error", "number already registered try new number"));
+                }
                 com.coachkonnects.backend.model.User newUser = new com.coachkonnects.backend.model.User();
                 newUser.setEmail(leadEmail.toLowerCase());
                 newUser.setRole("STUDENT");
