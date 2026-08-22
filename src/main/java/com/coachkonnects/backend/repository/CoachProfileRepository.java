@@ -11,7 +11,9 @@ import java.util.Optional;
 
 public interface CoachProfileRepository extends JpaRepository<CoachProfile, Long> {
     List<CoachProfile> findByStatusAndIsActiveTrue(ProfileStatus status);
+    List<CoachProfile> findByIsActiveTrue();
     Optional<CoachProfile> findByUser(User user);
     Optional<CoachProfile> findBySlugAndStatusAndIsActiveTrue(String slug, ProfileStatus status);
+    Optional<CoachProfile> findBySlugAndIsActiveTrue(String slug);
     Optional<CoachProfile> findBySocialLinks(String socialLinks);
 }

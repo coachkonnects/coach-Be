@@ -76,13 +76,32 @@ public class AuthController {
             String intendedRole = body.get("intendedRole");
             
             String isRegister = body.get("isRegister");
-            if (isRegister != null && Boolean.parseBoolean(isRegister)) {
-                java.util.Optional<User> existingUser = userRepository.findByEmail(email);
+            boolean registering = isRegister != null && Boolean.parseBoolean(isRegister);
+            java.util.Optional<User> existingUser = userRepository.findByEmail(email);
+
+            if (registering) {
                 if (existingUser.isPresent()) {
                     if ("ADMIN".equalsIgnoreCase(existingUser.get().getRole()) ||
                         coachProfileRepository.findByUser(existingUser.get()).isPresent() || 
                         studentProfileRepository.findByUser(existingUser.get()).isPresent()) {
                         return ResponseEntity.badRequest().body(Map.of("error", "This email is already registered. Please log in instead."));
+                    }
+                }
+            } else {
+                // It's a login attempt
+                if (!"ADMIN".equalsIgnoreCase(intendedRole)) {
+                    if (existingUser.isEmpty()) {
+                        return ResponseEntity.badRequest().body(Map.of("error", "Email not registered. Please sign up instead."));
+                    }
+                    User u = existingUser.get();
+                    if ("COACH".equalsIgnoreCase(intendedRole)) {
+                        if (coachProfileRepository.findByUser(u).isEmpty()) {
+                            return ResponseEntity.badRequest().body(Map.of("error", "No coach account found with this email. Please register as a coach."));
+                        }
+                    } else if ("STUDENT".equalsIgnoreCase(intendedRole)) {
+                        if (studentProfileRepository.findByUser(u).isEmpty()) {
+                            return ResponseEntity.badRequest().body(Map.of("error", "No student account found with this email. Please register as a student."));
+                        }
                     }
                 }
             }

@@ -28,7 +28,7 @@ public class PublicController {
 
     @GetMapping("/coaches")
     public ResponseEntity<?> getPublicCoaches() {
-        List<CoachProfile> approvedCoaches = coachProfileRepository.findByStatusAndIsActiveTrue(ProfileStatus.APPROVED);
+        List<CoachProfile> approvedCoaches = coachProfileRepository.findByIsActiveTrue();
         approvedCoaches.forEach(c -> {
             Double avg = reviewRepository.getAverageRatingForCoach(c.getId());
             Long count = reviewRepository.getReviewCountForCoach(c.getId());
@@ -43,9 +43,9 @@ public class PublicController {
         Optional<CoachProfile> coachOpt;
         try {
             Long id = Long.parseLong(slug);
-            coachOpt = coachProfileRepository.findById(id).filter(c -> c.getStatus() == ProfileStatus.APPROVED && c.isActive());
+            coachOpt = coachProfileRepository.findById(id).filter(c -> c.isActive());
         } catch (NumberFormatException e) {
-            coachOpt = coachProfileRepository.findBySlugAndStatusAndIsActiveTrue(slug, ProfileStatus.APPROVED);
+            coachOpt = coachProfileRepository.findBySlugAndIsActiveTrue(slug);
         }
         return coachOpt.map(c -> {
             Double avg = reviewRepository.getAverageRatingForCoach(c.getId());
@@ -61,9 +61,9 @@ public class PublicController {
         Optional<CoachProfile> coachOpt;
         try {
             Long id = Long.parseLong(slug);
-            coachOpt = coachProfileRepository.findById(id).filter(c -> c.getStatus() == ProfileStatus.APPROVED && c.isActive());
+            coachOpt = coachProfileRepository.findById(id).filter(c -> c.isActive());
         } catch (NumberFormatException e) {
-            coachOpt = coachProfileRepository.findBySlugAndStatusAndIsActiveTrue(slug, ProfileStatus.APPROVED);
+            coachOpt = coachProfileRepository.findBySlugAndIsActiveTrue(slug);
         }
         if (coachOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -76,9 +76,9 @@ public class PublicController {
         Optional<CoachProfile> coachOpt;
         try {
             Long id = Long.parseLong(slug);
-            coachOpt = coachProfileRepository.findById(id).filter(c -> c.getStatus() == ProfileStatus.APPROVED && c.isActive());
+            coachOpt = coachProfileRepository.findById(id).filter(c -> c.isActive());
         } catch (NumberFormatException e) {
-            coachOpt = coachProfileRepository.findBySlugAndStatusAndIsActiveTrue(slug, ProfileStatus.APPROVED);
+            coachOpt = coachProfileRepository.findBySlugAndIsActiveTrue(slug);
         }
         if (coachOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
