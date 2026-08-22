@@ -93,16 +93,16 @@ public class EnquiryController {
 
 
 
-            // Find the target coach
+            // Find the target coach (Regardless of PENDING/APPROVED status)
             CoachProfile coach = null;
             try {
                 Long id = Long.parseLong(coachSlug);
-                coach = coachProfileRepository.findById(id).filter(c -> c.getStatus() == com.coachkonnects.backend.model.ProfileStatus.APPROVED && c.isActive()).orElse(null);
+                coach = coachProfileRepository.findById(id).orElse(null);
             } catch (NumberFormatException e) {
-                coach = coachProfileRepository.findBySlugAndStatusAndIsActiveTrue(coachSlug, com.coachkonnects.backend.model.ProfileStatus.APPROVED).orElse(null);
+                coach = coachProfileRepository.findBySlug(coachSlug).orElse(null);
             }
             if (coach == null) {
-                throw new RuntimeException("Coach not found or not approved.");
+                throw new RuntimeException("Coach not found.");
             }
 
             // Spam protection logic
