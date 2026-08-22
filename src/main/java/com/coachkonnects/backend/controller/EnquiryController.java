@@ -14,6 +14,7 @@ import jakarta.persistence.EntityManager;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Value;
 import jakarta.servlet.http.HttpServletRequest;
+import com.coachkonnects.backend.util.JwtUtil;
 
 import java.util.Map;
 import org.springframework.mail.SimpleMailMessage;
@@ -37,6 +38,9 @@ public class EnquiryController {
 
     @Autowired
     private EntityManager entityManager;
+
+    @Autowired
+    private JwtUtil jwtUtil;
 
     @Autowired
     private JavaMailSender mailSender;
@@ -71,6 +75,18 @@ public class EnquiryController {
             
             leadName = (leadName == null || leadName.trim().isEmpty()) ? "Visitor" : leadName;
             String leadPhone = (rawPhone != null && rawPhone.trim().isEmpty()) ? null : rawPhone;
+
+            String token = null;
+            // Auto-register student if they don't exist
+            com.coachkonnects.backend.model.User existingUserCheck = userRepository.findByEmail(leadEmail.toLowerCase()).orElse(null);
+            if (existingUserCheck == null) {
+                com.coachkonnects.backend.model.User newUser = new com.coachkonnects.backend.model.User();
+                newUser.setEmail(leadEmail.toLowerCase());
+                newUser.setRole("STUDENT");
+                newUser.setPhoneNumber(leadPhone);
+                userRepository.save(newUser);
+                token = jwtUtil.generateToken(newUser.getEmail(), "STUDENT");
+            }
 
 
 
@@ -110,6 +126,9 @@ public class EnquiryController {
 
             enquiryRepository.save(enquiry);
 
+            if (token != null) {
+                return ResponseEntity.ok(Map.of("message", "Enquiry sent successfully!", "token", token));
+            }
             return ResponseEntity.ok(Map.of("message", "Enquiry sent successfully! Admin will review it shortly."));
         } catch (Exception e) {
             e.printStackTrace();
