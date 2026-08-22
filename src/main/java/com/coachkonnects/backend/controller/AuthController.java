@@ -49,26 +49,28 @@ public class AuthController {
     @PostMapping("/request-otp")
     public ResponseEntity<?> requestOtp(@RequestBody Map<String, String> body, jakarta.servlet.http.HttpServletRequest request) {
         try {
-            String ip = request.getRemoteAddr();
+            String email = body.get("email").trim().toLowerCase();
+            String ip = request.getHeader("X-Forwarded-For");
+            if (ip == null || ip.isEmpty()) {
+                ip = request.getRemoteAddr();
+            }
+            // Use both IP and Email as unique identifier for rate limit
+            String limitKey = ip + "_" + email;
             long now = System.currentTimeMillis();
             
-            // Skip rate limit for local testing
-            if (!"127.0.0.1".equals(ip) && !"0:0:0:0:0:0:0:1".equals(ip)) {
-                // Reset count if 2 hours have passed
-                if (otpTimestamps.containsKey(ip) && (now - otpTimestamps.get(ip)) > 2 * 60 * 60 * 1000) {
-                    otpRequests.remove(ip);
-                }
-                
-                int attempts = otpRequests.getOrDefault(ip, 0);
-                if (attempts >= 5) {
-                    return ResponseEntity.status(429).body(Map.of("error", "Maximum OTP attempts reached. Please try again after 2 hours."));
-                }
-                
-                otpRequests.put(ip, attempts + 1);
-                otpTimestamps.put(ip, now);
+            // Reset count if 2 hours have passed
+            if (otpTimestamps.containsKey(limitKey) && (now - otpTimestamps.get(limitKey)) > 2 * 60 * 60 * 1000) {
+                otpRequests.remove(limitKey);
             }
+            
+            int attempts = otpRequests.getOrDefault(limitKey, 0);
+            if (attempts >= 5) {
+                return ResponseEntity.status(429).body(Map.of("error", "Maximum OTP attempts reached for this email. Please try again after 2 hours."));
+            }
+            
+            otpRequests.put(limitKey, attempts + 1);
+            otpTimestamps.put(limitKey, now);
 
-            String email = body.get("email").trim().toLowerCase();
             if (blockedEmailRepository.existsByEmailIgnoreCase(email)) {
                 return ResponseEntity.status(403).body(Map.of("error", "This email address has been permanently banned from the platform."));
             }
